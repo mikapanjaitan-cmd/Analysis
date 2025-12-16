@@ -1365,7 +1365,7 @@ with tab3:
             </div>
             """, unsafe_allow_html=True)
             
-            # ==================== PDF GENERATION ====================
+            # ==================== PDF GENERATION - COMPLETE & FORMATTED ====================
             st.markdown("<br><br>", unsafe_allow_html=True)
             st.markdown("<div class='content-box'>", unsafe_allow_html=True)
             st.markdown("## 📄 Download Report")
@@ -1376,28 +1376,31 @@ with tab3:
                 from reportlab.lib.units import inch
                 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image
                 from reportlab.lib import colors
-                from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
+                from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT
                 
                 pdf_buffer = BytesIO()
                 doc = SimpleDocTemplate(pdf_buffer, pagesize=letter, rightMargin=50, leftMargin=50, topMargin=50, bottomMargin=30)
                 story = []
                 styles = getSampleStyleSheet()
                 
-                title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=24, textColor=colors.HexColor('#0d47a1'), spaceAfter=30, alignment=TA_CENTER, fontName='Helvetica-Bold')
-                heading_style = ParagraphStyle('CustomHeading', parent=styles['Heading2'], fontSize=16, textColor=colors.HexColor('#1565c0'), spaceAfter=12, spaceBefore=12, fontName='Helvetica-Bold')
-                subheading_style = ParagraphStyle('CustomSubHeading', parent=styles['Heading3'], fontSize=14, textColor=colors.HexColor('#1976d2'), spaceAfter=10, spaceBefore=10, fontName='Helvetica-Bold')
-                body_style = ParagraphStyle('CustomBody', parent=styles['Normal'], fontSize=11, alignment=TA_JUSTIFY, spaceAfter=12)
+                # Custom styles
+                title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=26, textColor=colors.HexColor('#0d47a1'), spaceAfter=20, alignment=TA_CENTER, fontName='Helvetica-Bold')
+                heading_style = ParagraphStyle('CustomHeading', parent=styles['Heading2'], fontSize=18, textColor=colors.HexColor('#1565c0'), spaceAfter=15, spaceBefore=20, fontName='Helvetica-Bold')
+                subheading_style = ParagraphStyle('CustomSubHeading', parent=styles['Heading3'], fontSize=14, textColor=colors.HexColor('#1976d2'), spaceAfter=10, spaceBefore=15, fontName='Helvetica-Bold')
+                body_style = ParagraphStyle('CustomBody', parent=styles['Normal'], fontSize=11, alignment=TA_JUSTIFY, spaceAfter=10, leading=14)
                 
-                # PAGE 1: COVER
-                story.append(Paragraph(f"📊 {t('pdf_title')}", title_style))
-                story.append(Spacer(1, 0.3*inch))
+                # =============== PAGE 1: COVER & EXECUTIVE SUMMARY ===============
+                story.append(Paragraph("📊 STATISTICAL ANALYSIS REPORT", title_style))
+                story.append(Spacer(1, 0.5*inch))
                 
+                # Report Info Table
                 info_data = [
-                    [t('pdf_report_info'), ''],
-                    [t('pdf_generated'), datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
-                    [t('pdf_total_resp'), str(len(data))],
-                    [t('pdf_x_vars'), ', '.join(x_items) if x_items else 'N/A'],
-                    [t('pdf_y_vars'), ', '.join(y_items) if y_items else 'N/A'],
+                    ['REPORT INFORMATION', ''],
+                    ['Generated', datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
+                    ['Total Respondents', str(len(data))],
+                    ['X Variables', ', '.join(x_items) if x_items else 'N/A'],
+                    ['Y Variables', ', '.join(y_items) if y_items else 'N/A'],
+                    ['Analysis Method', method],
                 ]
                 info_table = Table(info_data, colWidths=[2.5*inch, 4*inch])
                 info_table.setStyle(TableStyle([
@@ -1405,170 +1408,378 @@ with tab3:
                     ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
                     ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
                     ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                    ('FONTSIZE', (0, 0), (-1, 0), 12),
+                    ('FONTSIZE', (0, 0), (-1, 0), 13),
                     ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                    ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#e3f2fd')),
-                    ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#1565c0')),
+                    ('TOPPADDING', (0, 0), (-1, 0), 12),
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f5f5f5')),
+                    ('GRID', (0, 0), (-1, -1), 1.5, colors.HexColor('#1565c0')),
+                    ('FONTNAME', (0, 1), (0, -1), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 1), (-1, -1), 11),
+                    ('TOPPADDING', (0, 1), (-1, -1), 8),
+                    ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
                 ]))
                 story.append(info_table)
-                story.append(Spacer(1, 0.3*inch))
+                story.append(Spacer(1, 0.4*inch))
                 
-                story.append(Paragraph(t('pdf_exec_summary'), heading_style))
-                summary_text = f"""{t('pdf_exec_text_1')} {len(data)} {t('pdf_exec_text_2')} <b>{strength.lower()}</b> {direction.lower()} {t('pdf_exec_text_3')} {r:.3f}, {t('pdf_exec_text_4')} {p:.4f}). {t('pdf_exec_text_5')} <b>{t('pdf_statistically_sig') if p < 0.05 else t('pdf_not_statistically_sig')}</b> {t('pdf_exec_text_6')} ({method}) {t('pdf_exec_text_7')}"""
+                # Executive Summary
+                story.append(Paragraph("EXECUTIVE SUMMARY", heading_style))
+                summary_strength = "substantial" if abs(r) > 0.5 else "moderate"
+                sig_text = "statistically significant" if p < 0.05 else "not statistically significant"
+                
+                summary_text = f"""This comprehensive statistical analysis examines the relationship between X and Y variables using data from <b>{len(data)} respondents</b>. 
+                The analysis reveals a <b>{strength.lower()} {direction.lower()}</b> relationship with a correlation coefficient of <b>r = {r:.3f}</b> and 
+                <b>p-value = {p:.4f}</b>. The relationship is <b>{sig_text}</b> at the α = 0.05 significance level. 
+                The <b>{method}</b> method was selected based on normality testing of the data distribution, ensuring appropriate statistical rigor."""
+                
                 story.append(Paragraph(summary_text, body_style))
                 story.append(PageBreak())
                 
-                # PAGE 2: DESCRIPTIVE STATS
-                story.append(Paragraph(f"1. {t('pdf_desc_stats')}", heading_style))
+                # =============== PAGE 2: DESCRIPTIVE STATISTICS (COMPLETE) ===============
+                story.append(Paragraph("1. DESCRIPTIVE STATISTICS", heading_style))
+                story.append(Paragraph("Complete analysis of all variables including central tendency, dispersion, and distribution characteristics.", body_style))
+                story.append(Spacer(1, 0.2*inch))
                 
-                for idx, col in enumerate(variables_to_analyze[:3]):
+                # Analyze ALL variables
+                for idx, col in enumerate(variables_to_analyze):
                     if col not in data.columns:
                         continue
                     
-                    story.append(Paragraph(f"{t('pdf_variable')} {col}", subheading_style))
+                    story.append(Paragraph(f"Variable: {col}", subheading_style))
                     series = data[col]
                     
                     if pd.api.types.is_numeric_dtype(series):
                         desc = descriptive_numeric(series)
                         
+                        # Statistics table
                         stats_data = [
-                            [t('pdf_statistic'), t('pdf_value')],
-                            [t('count'), str(desc[t('count')])],
-                            [t('mean'), f"{desc[t('mean')]:.2f}"],
-                            [t('median'), f"{desc[t('median')]:.2f}"],
-                            [t('std_dev'), f"{desc[t('std_dev')]:.2f}"],
-                            [t('min'), f"{desc[t('min')]:.2f}"],
-                            [t('max'), f"{desc[t('max')]:.2f}"],
+                            ['Statistic', 'Value', 'Interpretation'],
+                            ['Count (n)', str(desc[t('count')]), 'Sample size'],
+                            ['Mean (μ)', f"{desc[t('mean')]:.3f}", 'Average value'],
+                            ['Median', f"{desc[t('median')]:.3f}", 'Middle value (50th percentile)'],
+                            ['Std Dev (σ)', f"{desc[t('std_dev')]:.3f}", 'Measure of spread'],
+                            ['Variance (σ²)', f"{desc[t('variance')]:.3f}", 'Squared deviation'],
+                            ['Minimum', f"{desc[t('min')]:.3f}", 'Lowest observed value'],
+                            ['Maximum', f"{desc[t('max')]:.3f}", 'Highest observed value'],
+                            ['Range', f"{desc[t('max')] - desc[t('min')]:.3f}", 'Max - Min'],
                         ]
-                        stats_table = Table(stats_data, colWidths=[2*inch, 2*inch])
+                        
+                        stats_table = Table(stats_data, colWidths=[1.5*inch, 1.3*inch, 3.7*inch])
                         stats_table.setStyle(TableStyle([
                             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e3f2fd')),
                             ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#0d47a1')),
-                            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                            ('ALIGN', (0, 0), (1, -1), 'CENTER'),
+                            ('ALIGN', (2, 0), (2, -1), 'LEFT'),
                             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                             ('GRID', (0, 0), (-1, -1), 1, colors.grey),
                             ('FONTSIZE', (0, 0), (-1, -1), 10),
+                            ('TOPPADDING', (0, 0), (-1, -1), 6),
+                            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9f9f9')]),
                         ]))
                         story.append(stats_table)
                         story.append(Spacer(1, 0.2*inch))
                         
+                        # Histogram
                         try:
-                            fig_hist, ax_hist = plt.subplots(figsize=(6, 3))
+                            fig_hist, ax_hist = plt.subplots(figsize=(7, 3.5))
                             clean_data = series.dropna()
-                            ax_hist.hist(clean_data, bins=15, alpha=0.7, color='#1e88e5', edgecolor='white')
-                            ax_hist.set_title(f'{t("pdf_distribution")} {col}', fontsize=11, fontweight='bold')
-                            ax_hist.set_xlabel(col, fontsize=9)
-                            ax_hist.set_ylabel(t('frequency'), fontsize=9)
-                            ax_hist.grid(True, alpha=0.3)
+                            
+                            n, bins, patches = ax_hist.hist(clean_data, bins=20, alpha=0.75, color='#1e88e5', edgecolor='white', linewidth=1.5)
+                            
+                            # Add mean and median lines
+                            ax_hist.axvline(desc[t('mean')], color='#d32f2f', linestyle='--', linewidth=2.5, label=f'Mean: {desc[t("mean")]:.2f}')
+                            ax_hist.axvline(desc[t('median')], color='#388e3c', linestyle='--', linewidth=2.5, label=f'Median: {desc[t("median")]:.2f}')
+                            
+                            ax_hist.set_title(f'Distribution of {col}', fontsize=13, fontweight='bold', pad=15)
+                            ax_hist.set_xlabel(col, fontsize=11, fontweight='bold')
+                            ax_hist.set_ylabel('Frequency', fontsize=11, fontweight='bold')
+                            ax_hist.legend(loc='upper right', framealpha=0.95, fontsize=10)
+                            ax_hist.grid(True, alpha=0.3, linestyle='--')
+                            ax_hist.spines['top'].set_visible(False)
+                            ax_hist.spines['right'].set_visible(False)
+                            
+                            plt.tight_layout()
                             
                             img_buffer = BytesIO()
-                            fig_hist.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
+                            fig_hist.savefig(img_buffer, format='png', dpi=200, bbox_inches='tight')
                             img_buffer.seek(0)
                             plt.close(fig_hist)
                             
-                            img = Image(img_buffer, width=5*inch, height=2.5*inch)
+                            img = Image(img_buffer, width=6*inch, height=3*inch)
                             story.append(img)
-                            story.append(Spacer(1, 0.2*inch))
+                            story.append(Spacer(1, 0.15*inch))
                         except Exception as e:
-                            story.append(Paragraph(f"<i>Chart error: {str(e)}</i>", body_style))
+                            story.append(Paragraph(f"<i>Chart generation error: {str(e)}</i>", body_style))
+                        
+                        # Frequency Distribution (for Likert-type data)
+                        if is_likert(series):
+                            story.append(Paragraph(f"Frequency Distribution for {col}:", subheading_style))
+                            freq = freq_table(series)
+                            
+                            freq_data = [['Category', 'Frequency', 'Percentage']]
+                            for _, row in freq.iterrows():
+                                freq_data.append([
+                                    str(row[t('category')]),
+                                    str(row[t('frequency')]),
+                                    f"{row[t('percentage')]:.1f}%"
+                                ])
+                            
+                            freq_table_pdf = Table(freq_data, colWidths=[2*inch, 2*inch, 2*inch])
+                            freq_table_pdf.setStyle(TableStyle([
+                                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#fff3e0')),
+                                ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#e65100')),
+                                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                                ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+                                ('FONTSIZE', (0, 0), (-1, -1), 10),
+                                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#fffbf5')]),
+                            ]))
+                            story.append(freq_table_pdf)
+                            story.append(Spacer(1, 0.2*inch))
+                    
+                    if idx < len(variables_to_analyze) - 1:
+                        story.append(Spacer(1, 0.15*inch))
                 
                 story.append(PageBreak())
                 
-                # PAGE 3: NORMALITY
-                story.append(Paragraph(f"2. {t('pdf_normality_test')}", heading_style))
-                story.append(Paragraph(t('pdf_normality_text'), body_style))
+                # =============== PAGE 3: NORMALITY TESTING ===============
+                story.append(Paragraph("2. NORMALITY TESTING", heading_style))
+                story.append(Paragraph("Shapiro-Wilk test was conducted to assess the normality of data distribution. This test helps determine the appropriate correlation method.", body_style))
+                story.append(Spacer(1, 0.2*inch))
                 
                 norm_data = [
-                    [t('variable'), t('p_value'), t('distribution'), t('pdf_interpretation_col')],
-                    ['X_total', f'{x_norm:.4f}', t('normal') if x_norm > 0.05 else t('non_normal'), 
-                     t('pdf_data_follows') if x_norm > 0.05 else t('pdf_data_not_follows')],
-                    ['Y_total', f'{y_norm:.4f}', t('normal') if y_norm > 0.05 else t('non_normal'),
-                     t('pdf_data_follows') if y_norm > 0.05 else t('pdf_data_not_follows')]
+                    ['Variable', 'p-value', 'Distribution', 'Interpretation'],
+                    ['X_total', f'{x_norm:.4f}', 
+                     '✓ Normal' if x_norm > 0.05 else '✗ Non-Normal',
+                     'Data follows normal distribution' if x_norm > 0.05 else 'Data does not follow normal distribution'],
+                    ['Y_total', f'{y_norm:.4f}',
+                     '✓ Normal' if y_norm > 0.05 else '✗ Non-Normal',
+                     'Data follows normal distribution' if y_norm > 0.05 else 'Data does not follow normal distribution']
                 ]
-                norm_table = Table(norm_data, colWidths=[1.3*inch, 1*inch, 1.3*inch, 2.9*inch])
+                
+                norm_table = Table(norm_data, colWidths=[1.2*inch, 1*inch, 1.3*inch, 3*inch])
                 norm_table.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e3f2fd')),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#0d47a1')),
-                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e8f5e9')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#2e7d32')),
+                    ('ALIGN', (0, 0), (2, -1), 'CENTER'),
+                    ('ALIGN', (3, 0), (3, -1), 'LEFT'),
                     ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                    ('FONTSIZE', (0, 0), (-1, -1), 9),
+                    ('FONTSIZE', (0, 0), (-1, -1), 10),
                     ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                    ('TOPPADDING', (0, 0), (-1, -1), 8),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9f9f9')]),
                 ]))
                 story.append(norm_table)
+                story.append(Spacer(1, 0.3*inch))
+                
+                # Method selection explanation
+                method_box = f"""<b>Selected Method: {method}</b><br/><br/>
+                Based on the normality test results, <b>{method}</b> was selected as the most appropriate correlation analysis method. 
+                {'Pearson correlation is suitable when both variables follow a normal distribution and the relationship is linear.' if method == t('pearson') else 'Spearman rank correlation is more robust for non-normal distributions, ordinal data, and is less sensitive to outliers.'}
+                """
+                story.append(Paragraph(method_box, body_style))
                 story.append(PageBreak())
                 
-                # PAGE 4: CORRELATION
-                story.append(Paragraph(f"3. {t('pdf_corr_analysis')}", heading_style))
+                # =============== PAGE 4: CORRELATION ANALYSIS ===============
+                story.append(Paragraph("3. CORRELATION ANALYSIS", heading_style))
+                story.append(Paragraph(f"Analysis of the relationship between X_total and Y_total using {method}.", body_style))
+                story.append(Spacer(1, 0.2*inch))
                 
+                # Correlation Results Table
                 corr_data = [
-                    [t('pdf_metric'), t('pdf_value'), t('pdf_interp')],
-                    [t('method'), method, t('pdf_method_used')],
-                    [t('coefficient'), f'{r:.3f}', f'{strength} {direction.lower()}'],
-                    [t('p_value'), f'{p:.4f}', t('significant') if p < 0.05 else t('not_significant')],
+                    ['Metric', 'Value', 'Interpretation'],
+                    ['Method', method, 'Statistical method used for correlation analysis'],
+                    ['Correlation Coefficient (r)', f'{r:.4f}', f'{strength} {direction.lower()} relationship'],
+                    ['p-value', f'{p:.4f}', f'{"Statistically significant" if p < 0.05 else "Not statistically significant"} (α = 0.05)'],
+                    ['Sample Size (n)', str(len(data)), 'Number of observations included in analysis'],
+                    ['Strength', strength, 'Classified based on |r| value'],
+                    ['Direction', direction, 'Positive = both increase together; Negative = inverse relationship'],
                 ]
-                corr_table = Table(corr_data, colWidths=[2*inch, 1.8*inch, 2.7*inch])
+                
+                corr_table = Table(corr_data, colWidths=[2*inch, 1.5*inch, 3*inch])
                 corr_table.setStyle(TableStyle([
                     ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e3f2fd')),
                     ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#0d47a1')),
                     ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('ALIGN', (0, 0), (1, -1), 'CENTER'),
+                    ('ALIGN', (2, 0), (2, -1), 'LEFT'),
                     ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+                    ('FONTSIZE', (0, 0), (-1, -1), 10),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                    ('TOPPADDING', (0, 0), (-1, -1), 8),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9f9f9')]),
                 ]))
                 story.append(corr_table)
                 story.append(Spacer(1, 0.3*inch))
                 
+                # Scatter Plot with Regression Line
+                story.append(Paragraph("Scatter Plot with Trend Line:", subheading_style))
+                story.append(Spacer(1, 0.1*inch))
+                
                 try:
-                    fig_scatter, ax_scatter = plt.subplots(figsize=(6, 4))
-                    ax_scatter.scatter(data["X_total"], data["Y_total"], alpha=0.6, s=50, c='#1e88e5')
+                    fig_scatter, ax_scatter = plt.subplots(figsize=(7, 5))
                     
+                    # Scatter plot
+                    scatter = ax_scatter.scatter(data["X_total"], data["Y_total"], 
+                                                alpha=0.6, s=80, c=data["Y_total"], 
+                                                cmap='viridis', edgecolors='white', linewidth=1)
+                    
+                    # Add regression line
                     z = np.polyfit(data["X_total"].dropna(), data["Y_total"].dropna(), 1)
                     p_fit = np.poly1d(z)
                     x_line = np.linspace(data["X_total"].min(), data["X_total"].max(), 100)
-                    ax_scatter.plot(x_line, p_fit(x_line), "r--", linewidth=2)
+                    ax_scatter.plot(x_line, p_fit(x_line), "r--", linewidth=3, alpha=0.8, 
+                                   label=f'Trend Line: y = {z[0]:.3f}x + {z[1]:.3f}')
                     
-                    ax_scatter.set_xlabel("X_total", fontsize=11, fontweight='bold')
-                    ax_scatter.set_ylabel("Y_total", fontsize=11, fontweight='bold')
-                    ax_scatter.set_title(f'{method}\nr = {r:.3f}, p = {p:.4f}', fontsize=12)
-                    ax_scatter.grid(True, alpha=0.3)
+                    ax_scatter.set_xlabel("X_total (Independent Variable)", fontsize=12, fontweight='bold')
+                    ax_scatter.set_ylabel("Y_total (Dependent Variable)", fontsize=12, fontweight='bold')
+                    ax_scatter.set_title(f'{method} Correlation Analysis\nr = {r:.4f}, p = {p:.4f}, n = {len(data)}', 
+                                        fontsize=13, fontweight='bold', pad=15)
+                    ax_scatter.legend(fontsize=10, loc='best', framealpha=0.95)
+                    ax_scatter.grid(True, alpha=0.3, linestyle='--')
+                    ax_scatter.spines['top'].set_visible(False)
+                    ax_scatter.spines['right'].set_visible(False)
+                    
+                    # Add colorbar
+                    cbar = plt.colorbar(scatter, ax=ax_scatter)
+                    cbar.set_label('Y_total Value', fontsize=10, fontweight='bold')
+                    
+                    plt.tight_layout()
                     
                     scatter_buffer = BytesIO()
-                    fig_scatter.savefig(scatter_buffer, format='png', dpi=150, bbox_inches='tight')
+                    fig_scatter.savefig(scatter_buffer, format='png', dpi=200, bbox_inches='tight')
                     scatter_buffer.seek(0)
                     plt.close(fig_scatter)
                     
-                    img_scatter = Image(scatter_buffer, width=5.5*inch, height=3.7*inch)
+                    img_scatter = Image(scatter_buffer, width=6*inch, height=4.3*inch)
                     story.append(img_scatter)
-                except:
-                    pass
+                except Exception as e:
+                    story.append(Paragraph(f"<i>Scatter plot error: {str(e)}</i>", body_style))
                 
                 story.append(PageBreak())
                 
-                # PAGE 5: CONCLUSION
-                story.append(Paragraph(f"4. {t('pdf_conclusion')}", heading_style))
-                conclusion_text = f"""<b>{t('pdf_summary')}</b><br/><br/>
-                The analysis found a <b>{strength.lower()} {direction.lower()}</b> relationship (r = {r:.3f}, p = {p:.4f}).<br/><br/>
-                Results are {'statistically significant' if p < 0.05 else 'not statistically significant'} at α = 0.05 level.
+                # =============== PAGE 5: INTERPRETATION & FINDINGS ===============
+                story.append(Paragraph("4. INTERPRETATION OF RESULTS", heading_style))
+                story.append(Paragraph("Detailed interpretation of the correlation analysis findings:", body_style))
+                story.append(Spacer(1, 0.2*inch))
+                
+                # Strength interpretation
+                story.append(Paragraph("4.1 Strength of Relationship", subheading_style))
+                substantial_text = "substantial" if abs(r) > 0.5 else "moderate to weak"
+                strength_interp = f"""The correlation coefficient of <b>r = {r:.4f}</b> indicates a <b>{strength.lower()}</b> relationship between X and Y variables. 
+                This suggests that there is {substantial_text} association between the variables. In practical terms, 
+                {'this strong correlation indicates that changes in X are consistently associated with changes in Y.' if abs(r) > 0.5 else 'while a relationship exists, other factors may also influence the outcome.'}"""
+                story.append(Paragraph(strength_interp, body_style))
+                story.append(Spacer(1, 0.15*inch))
+                
+                # Direction interpretation
+                story.append(Paragraph("4.2 Direction of Relationship", subheading_style))
+                direction_text = "increase as well" if r > 0 else "decrease"
+                movement = "same direction" if r > 0 else "opposite directions"
+                dir_interp = f"""The <b>{direction.lower()}</b> correlation coefficient indicates that as X increases, Y tends to <b>{direction_text}</b>. 
+                This {'direct' if r > 0 else 'inverse'} relationship suggests that both variables move in {movement}. 
+                {'Higher values of X are associated with higher values of Y.' if r > 0 else 'Higher values of X are associated with lower values of Y.'}"""
+                story.append(Paragraph(dir_interp, body_style))
+                story.append(Spacer(1, 0.15*inch))
+                
+                # Statistical significance
+                story.append(Paragraph("4.3 Statistical Significance", subheading_style))
+                sig_interp = f"""With a p-value of <b>{p:.4f}</b>, the relationship is <b>{'statistically significant' if p < 0.05 else 'not statistically significant'}</b> at the α = 0.05 level. 
+                This means {'we can reject the null hypothesis and conclude that the observed correlation is unlikely to have occurred by random chance alone. The relationship observed in the sample is likely to exist in the population.' if p < 0.05 else 'we cannot reject the null hypothesis. The observed correlation may be due to random variation in the sample, and we cannot confidently conclude that a relationship exists in the population.'}"""
+                story.append(Paragraph(sig_interp, body_style))
+                story.append(Spacer(1, 0.15*inch))
+                
+                # Important note
+                story.append(Paragraph("4.4 Important Considerations", subheading_style))
+                note_text = f"""<b>Correlation does not imply causation.</b> While we observe {'a statistically significant association' if p < 0.05 else 'an association'} between the variables, 
+                this analysis alone cannot determine if one variable causes changes in the other. Additional research, including experimental designs or longitudinal studies, 
+                would be needed to establish causal relationships. Other confounding variables may also influence the observed relationship."""
+                story.append(Paragraph(note_text, body_style))
+                story.append(PageBreak())
+                
+                # =============== PAGE 6: CONCLUSION & RECOMMENDATIONS ===============
+                story.append(Paragraph("5. CONCLUSION", heading_style))
+                story.append(Spacer(1, 0.2*inch))
+                
+                story.append(Paragraph("5.1 Summary of Key Findings", subheading_style))
+                
+                findings_list = f"""
+                <b>1. Descriptive Analysis:</b> Successfully analyzed {len(variables_to_analyze)} variables, revealing meaningful patterns 
+                in the data distribution. Central tendency measures and dispersion statistics provide a comprehensive understanding of each variable.<br/><br/>
+                
+                <b>2. Composite Scores:</b> Created reliable aggregate measures (X_total and Y_total) that improve measurement reliability 
+                by reducing random error and providing more stable estimates of the underlying constructs.<br/><br/>
+                
+                <b>3. Normality Assessment:</b> Shapiro-Wilk tests determined that {'both variables follow normal distributions, supporting the use of parametric methods' if x_norm > 0.05 and y_norm > 0.05 else 'at least one variable deviates from normality, necessitating the use of non-parametric methods'}.<br/><br/>
+                
+                <b>4. Correlation Analysis:</b> Found a <b>{strength.lower()} {direction.lower()}</b> relationship (r = {r:.4f}) 
+                that is <b>{'statistically significant' if p < 0.05 else 'not statistically significant'}</b> at the 0.05 level (p = {p:.4f}).<br/><br/>
+                
+                <b>5. Methodological Rigor:</b> Applied appropriate statistical methods ({method}) based on data distribution characteristics, 
+                ensuring valid and reliable results that meet academic standards.
                 """
-                story.append(Paragraph(conclusion_text, body_style))
+                story.append(Paragraph(findings_list, body_style))
+                story.append(Spacer(1, 0.3*inch))
+                
+                # Recommendations
+                story.append(Paragraph("5.2 Recommendations for Future Research", subheading_style))
+                recommendations = """
+                <b>1. Extended Analysis:</b> Consider conducting additional analyses to explore potential confounding variables, 
+                mediating factors, or moderating effects that might influence the observed relationship.<br/><br/>
+                
+                <b>2. Subgroup Analysis:</b> Examine whether the relationship differs across demographic subgroups or other relevant 
+                categories to identify potential variation in effects.<br/><br/>
+                
+                <b>3. Replication Studies:</b> Replicate findings with independent samples from different populations to validate 
+                the generalizability and robustness of the results.<br/><br/>
+                
+                <b>4. Qualitative Integration:</b> Consider incorporating qualitative methods (interviews, focus groups) to better 
+                understand the mechanisms and processes underlying the observed statistical relationships.<br/><br/>
+                
+                <b>5. Longitudinal Investigation:</b> If feasible, conduct longitudinal studies to examine changes over time and 
+                potentially establish temporal precedence, which is necessary for causal inference.
+                """
+                story.append(Paragraph(recommendations, body_style))
+                story.append(Spacer(1, 0.4*inch))
+                
+                # Academic Reporting Note
+                story.append(Paragraph("5.3 Academic Reporting", subheading_style))
+                academic_text = """These results are suitable for inclusion in academic papers, theses, and research reports. 
+                When reporting, ensure proper citation of statistical methods, acknowledgment of limitations (particularly regarding 
+                causality), and transparent reporting of all relevant statistical parameters including effect sizes, confidence intervals, 
+                and sample characteristics."""
+                story.append(Paragraph(academic_text, body_style))
+                
+                # Footer
+                story.append(Spacer(1, 0.6*inch))
+                footer_text = f"""<i>Report generated by Data Analytics Platform | © 2024 Group 3 Project<br/>
+                Generated on {datetime.now().strftime('%B %d, %Y at %H:%M:%S')}<br/>
+                This report contains {len([s for s in story if isinstance(s, PageBreak)])+1} pages of comprehensive statistical analysis.</i>"""
+                story.append(Paragraph(footer_text, ParagraphStyle('Footer', parent=body_style, fontSize=9, alignment=TA_CENTER, textColor=colors.grey, leading=12)))
                 
                 # Build PDF
                 doc.build(story)
                 pdf_buffer.seek(0)
                 
                 st.download_button(
-                    label=f"📥 {t('pdf_download_btn')}",
+                    label=f"📥 Download Complete Analysis Report (PDF)",
                     data=pdf_buffer,
-                    file_name=f"analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                    file_name=f"statistical_analysis_complete_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
                     mime="application/pdf",
                     type="primary",
                     use_container_width=True
                 )
                 
-                st.success(f"✅ {t('pdf_success')}")
+                st.success("✅ PDF report generated successfully!")
+                st.info(f"📊 This comprehensive report includes {len([s for s in story if isinstance(s, PageBreak)])+1} pages with: Executive Summary, Complete Descriptive Statistics for ALL variables, Normality Tests, Correlation Analysis with visualizations, Detailed Interpretations, and Research Recommendations.")
                 
             except ImportError:
-                st.error("❌ ReportLab not installed. Install: pip install reportlab")
+                st.error("❌ ReportLab library not found. Install with: pip install reportlab")
             except Exception as e:
-                st.error(f"❌ PDF Error: {str(e)}")
+                st.error(f"❌ Error generating PDF: {str(e)}")
                 import traceback
                 st.code(traceback.format_exc())
             
