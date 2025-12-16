@@ -301,6 +301,7 @@ translations = {
         'pdf_download_btn': 'Download Complete Analysis Report with Charts (PDF)',
         'pdf_success': 'PDF report with all charts generated successfully!',
         'pdf_includes': 'This report includes: Executive Summary, Descriptive Statistics with Charts, Normality Tests, Correlation Analysis with Scatter Plot, Detailed Interpretation, and Conclusions.',
+        'and': 'and',
     },
     'id': {
         'title': 'Platform Analitik Data',
@@ -580,7 +581,8 @@ translations = {
         'pdf_footer': 'Laporan dibuat oleh Data Analytics Platform | © 2024 | Dibuat pada',
         'pdf_download_btn': 'Unduh Laporan Analisis Lengkap dengan Grafik (PDF)',
         'pdf_success': 'Laporan PDF dengan semua grafik berhasil dibuat!',
-        'pdf_includes': 'Laporan ini mencakup: Ringkasan Eksekutif, Statistik Deskriptif dengan Grafik, Uji Normalitas, Analisis Korelasi dengan Diagram Sebar, Interpretasi Terperinci, dan Kesimpulan.', 
+        'pdf_includes': 'Laporan ini mencakup: Ringkasan Eksekutif, Statistik Deskriptif dengan Grafik, Uji Normalitas, Analisis Korelasi dengan Diagram Sebar, Interpretasi Terperinci, dan Kesimpulan.',
+        'and': 'dan',
     }
 }
 
@@ -1365,10 +1367,10 @@ with tab3:
             </div>
             """, unsafe_allow_html=True)
             
-    # ==================== PDF GENERATION - COMPLETE & FORMATTED ====================
+    # ==================== PDF GENERATION - BILINGUAL VERSION ====================
             st.markdown("<br><br>", unsafe_allow_html=True)
             st.markdown("<div class='content-box'>", unsafe_allow_html=True)
-            st.markdown("## 📄 Download Report")
+            st.markdown(f"## 📄 {t('pdf_download_btn').split('(')[0]}")
             
             try:
                 from reportlab.lib.pagesizes import letter
@@ -1390,17 +1392,17 @@ with tab3:
                 body_style = ParagraphStyle('CustomBody', parent=styles['Normal'], fontSize=11, alignment=TA_JUSTIFY, spaceAfter=10, leading=14)
                 
                 # =============== PAGE 1: COVER & EXECUTIVE SUMMARY ===============
-                story.append(Paragraph("📊 STATISTICAL ANALYSIS REPORT", title_style))
+                story.append(Paragraph(f"📊 {t('pdf_title')}", title_style))
                 story.append(Spacer(1, 0.5*inch))
                 
                 # Report Info Table
                 info_data = [
-                    ['REPORT INFORMATION', ''],
-                    ['Generated', datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
-                    ['Total Respondents', str(len(data))],
-                    ['X Variables', ', '.join(x_items) if x_items else 'N/A'],
-                    ['Y Variables', ', '.join(y_items) if y_items else 'N/A'],
-                    ['Analysis Method', method],
+                    [t('pdf_report_info'), ''],
+                    [t('pdf_generated'), datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
+                    [t('pdf_total_resp'), str(len(data))],
+                    [t('pdf_x_vars'), ', '.join(x_items) if x_items else 'N/A'],
+                    [t('pdf_y_vars'), ', '.join(y_items) if y_items else 'N/A'],
+                    [t('method'), method],
                 ]
                 info_table = Table(info_data, colWidths=[2.5*inch, 4*inch])
                 info_table.setStyle(TableStyle([
@@ -1422,29 +1424,26 @@ with tab3:
                 story.append(Spacer(1, 0.4*inch))
                 
                 # Executive Summary
-                story.append(Paragraph("EXECUTIVE SUMMARY", heading_style))
-                summary_strength = "substantial" if abs(r) > 0.5 else "moderate"
-                sig_text = "statistically significant" if p < 0.05 else "not statistically significant"
+                story.append(Paragraph(t('pdf_exec_summary'), heading_style))
+                sig_text = t('pdf_statistically_sig') if p < 0.05 else t('pdf_not_statistically_sig')
                 
-                summary_text = f"""This comprehensive statistical analysis examines the relationship between X and Y variables using data from <b>{len(data)} respondents</b>. 
-                The analysis reveals a <b>{strength.lower()} {direction.lower()}</b> relationship with a correlation coefficient of <b>r = {r:.3f}</b> and 
-                <b>p-value = {p:.4f}</b>. The relationship is <b>{sig_text}</b> at the α = 0.05 significance level. 
-                The <b>{method}</b> method was selected based on normality testing of the data distribution, ensuring appropriate statistical rigor."""
+                summary_text = f"""{t('pdf_exec_text_1')} <b>{len(data)} {t('pdf_exec_text_2')}</b> {strength.lower()} {direction.lower()} {t('pdf_exec_text_3')} <b>r = {r:.3f}</b>, 
+                <b>{t('pdf_exec_text_4')} {p:.4f}</b>). {t('pdf_exec_text_5')} <b>{sig_text}</b> 
+                {t('pdf_exec_text_6')} <b>{method}</b> {t('pdf_exec_text_7')}"""
                 
                 story.append(Paragraph(summary_text, body_style))
                 story.append(PageBreak())
                 
-                # =============== PAGE 2: DESCRIPTIVE STATISTICS (COMPLETE) ===============
-                story.append(Paragraph("1. DESCRIPTIVE STATISTICS", heading_style))
-                story.append(Paragraph("Complete analysis of all variables including central tendency, dispersion, and distribution characteristics.", body_style))
+                # =============== PAGE 2: DESCRIPTIVE STATISTICS ===============
+                story.append(Paragraph(f"1. {t('pdf_desc_stats')}", heading_style))
+                story.append(Paragraph(t('descriptive_desc'), body_style))
                 story.append(Spacer(1, 0.2*inch))
                 
-                # Analyze ALL variables
                 for idx, col in enumerate(variables_to_analyze):
                     if col not in data.columns:
                         continue
                     
-                    story.append(Paragraph(f"Variable: {col}", subheading_style))
+                    story.append(Paragraph(f"{t('pdf_variable')} {col}", subheading_style))
                     series = data[col]
                     
                     if pd.api.types.is_numeric_dtype(series):
@@ -1452,15 +1451,15 @@ with tab3:
                         
                         # Statistics table
                         stats_data = [
-                            ['Statistic', 'Value', 'Interpretation'],
-                            ['Count (n)', str(desc[t('count')]), 'Sample size'],
-                            ['Mean (μ)', f"{desc[t('mean')]:.3f}", 'Average value'],
-                            ['Median', f"{desc[t('median')]:.3f}", 'Middle value (50th percentile)'],
-                            ['Std Dev (σ)', f"{desc[t('std_dev')]:.3f}", 'Measure of spread'],
-                            ['Variance (σ²)', f"{desc[t('variance')]:.3f}", 'Squared deviation'],
-                            ['Minimum', f"{desc[t('min')]:.3f}", 'Lowest observed value'],
-                            ['Maximum', f"{desc[t('max')]:.3f}", 'Highest observed value'],
-                            ['Range', f"{desc[t('max')] - desc[t('min')]:.3f}", 'Max - Min'],
+                            [t('pdf_statistic'), t('pdf_value'), t('pdf_interpretation_col')],
+                            [t('count'), str(desc[t('count')]), t('size')],
+                            [t('mean'), f"{desc[t('mean')]:.3f}", t('central_tendency')],
+                            [t('median'), f"{desc[t('median')]:.3f}", t('central_tendency')],
+                            [t('std_dev'), f"{desc[t('std_dev')]:.3f}", t('spread')],
+                            [t('variance'), f"{desc[t('variance')]:.3f}", t('spread')],
+                            [t('min'), f"{desc[t('min')]:.3f}", t('min')],
+                            [t('max'), f"{desc[t('max')]:.3f}", t('max')],
+                            [t('range'), f"{desc[t('max')] - desc[t('min')]:.3f}", t('range')],
                         ]
                         
                         stats_table = Table(stats_data, colWidths=[1.5*inch, 1.3*inch, 3.7*inch])
@@ -1486,13 +1485,12 @@ with tab3:
                             
                             n, bins, patches = ax_hist.hist(clean_data, bins=20, alpha=0.75, color='#1e88e5', edgecolor='white', linewidth=1.5)
                             
-                            # Add mean and median lines
-                            ax_hist.axvline(desc[t('mean')], color='#d32f2f', linestyle='--', linewidth=2.5, label=f'Mean: {desc[t("mean")]:.2f}')
-                            ax_hist.axvline(desc[t('median')], color='#388e3c', linestyle='--', linewidth=2.5, label=f'Median: {desc[t("median")]:.2f}')
+                            ax_hist.axvline(desc[t('mean')], color='#d32f2f', linestyle='--', linewidth=2.5, label=f'{t("mean")}: {desc[t("mean")]:.2f}')
+                            ax_hist.axvline(desc[t('median')], color='#388e3c', linestyle='--', linewidth=2.5, label=f'{t("median")}: {desc[t("median")]:.2f}')
                             
-                            ax_hist.set_title(f'Distribution of {col}', fontsize=13, fontweight='bold', pad=15)
+                            story.append(Paragraph(f"{t('pdf_distribution')} {col}", subheading_style))
                             ax_hist.set_xlabel(col, fontsize=11, fontweight='bold')
-                            ax_hist.set_ylabel('Frequency', fontsize=11, fontweight='bold')
+                            ax_hist.set_ylabel(t('frequency'), fontsize=11, fontweight='bold')
                             ax_hist.legend(loc='upper right', framealpha=0.95, fontsize=10)
                             ax_hist.grid(True, alpha=0.3, linestyle='--')
                             ax_hist.spines['top'].set_visible(False)
@@ -1511,12 +1509,12 @@ with tab3:
                         except Exception as e:
                             story.append(Paragraph(f"<i>Chart generation error: {str(e)}</i>", body_style))
                         
-                        # Frequency Distribution (for Likert-type data)
+                        # Frequency Distribution
                         if is_likert(series):
-                            story.append(Paragraph(f"Frequency Distribution for {col}:", subheading_style))
+                            story.append(Paragraph(f"{t('frequency_dist')} - {col}:", subheading_style))
                             freq = freq_table(series)
                             
-                            freq_data = [['Category', 'Frequency', 'Percentage']]
+                            freq_data = [[t('category'), t('frequency'), t('percentage')]]
                             for _, row in freq.iterrows():
                                 freq_data.append([
                                     str(row[t('category')]),
@@ -1543,18 +1541,18 @@ with tab3:
                 story.append(PageBreak())
                 
                 # =============== PAGE 3: NORMALITY TESTING ===============
-                story.append(Paragraph("2. NORMALITY TESTING", heading_style))
-                story.append(Paragraph("Shapiro-Wilk test was conducted to assess the normality of data distribution. This test helps determine the appropriate correlation method.", body_style))
+                story.append(Paragraph(f"2. {t('pdf_normality_test')}", heading_style))
+                story.append(Paragraph(t('pdf_normality_text'), body_style))
                 story.append(Spacer(1, 0.2*inch))
                 
                 norm_data = [
-                    ['Variable', 'p-value', 'Distribution', 'Interpretation'],
+                    [t('variable'), 'p-value', t('distribution'), t('pdf_interpretation_col')],
                     ['X_total', f'{x_norm:.4f}', 
-                     '✓ Normal' if x_norm > 0.05 else '✗ Non-Normal',
-                     'Data follows normal distribution' if x_norm > 0.05 else 'Data does not follow normal distribution'],
+                     f'✓ {t("normal")}' if x_norm > 0.05 else f'✗ {t("non_normal")}',
+                     t('pdf_data_follows') if x_norm > 0.05 else t('pdf_data_not_follows')],
                     ['Y_total', f'{y_norm:.4f}',
-                     '✓ Normal' if y_norm > 0.05 else '✗ Non-Normal',
-                     'Data follows normal distribution' if y_norm > 0.05 else 'Data does not follow normal distribution']
+                     f'✓ {t("normal")}' if y_norm > 0.05 else f'✗ {t("non_normal")}',
+                     t('pdf_data_follows') if y_norm > 0.05 else t('pdf_data_not_follows')]
                 ]
                 
                 norm_table = Table(norm_data, colWidths=[1.2*inch, 1*inch, 1.3*inch, 3*inch])
@@ -1574,28 +1572,28 @@ with tab3:
                 story.append(norm_table)
                 story.append(Spacer(1, 0.3*inch))
                 
-                # Method selection explanation
-                method_box = f"""<b>Selected Method: {method}</b><br/><br/>
-                Based on the normality test results, <b>{method}</b> was selected as the most appropriate correlation analysis method. 
-                {'Pearson correlation is suitable when both variables follow a normal distribution and the relationship is linear.' if method == t('pearson') else 'Spearman rank correlation is more robust for non-normal distributions, ordinal data, and is less sensitive to outliers.'}
+                # Method selection
+                method_box = f"""<b>{t('pdf_selected_method')} {method}</b><br/><br/>
+                {t('pdf_method_text_1')} <b>{method}</b> {t('pdf_method_text_2')} 
+                {t('pdf_pearson_suitable') if method == t('pearson') else t('pdf_spearman_suitable')}
                 """
                 story.append(Paragraph(method_box, body_style))
                 story.append(PageBreak())
                 
                 # =============== PAGE 4: CORRELATION ANALYSIS ===============
-                story.append(Paragraph("3. CORRELATION ANALYSIS", heading_style))
-                story.append(Paragraph(f"Analysis of the relationship between X_total and Y_total using {method}.", body_style))
+                story.append(Paragraph(f"3. {t('pdf_corr_analysis')}", heading_style))
+                story.append(Paragraph(f"{t('association')} X_total {t('and')} Y_total {t('method').lower()} {method}.", body_style))
                 story.append(Spacer(1, 0.2*inch))
                 
                 # Correlation Results Table
                 corr_data = [
-                    ['Metric', 'Value', 'Interpretation'],
-                    ['Method', method, 'Statistical method used for correlation analysis'],
-                    ['Correlation Coefficient (r)', f'{r:.4f}', f'{strength} {direction.lower()} relationship'],
-                    ['p-value', f'{p:.4f}', f'{"Statistically significant" if p < 0.05 else "Not statistically significant"} (α = 0.05)'],
-                    ['Sample Size (n)', str(len(data)), 'Number of observations included in analysis'],
-                    ['Strength', strength, 'Classified based on |r| value'],
-                    ['Direction', direction, 'Positive = both increase together; Negative = inverse relationship'],
+                    [t('pdf_metric'), t('pdf_value'), t('pdf_interp')],
+                    [t('method'), method, t('pdf_method_used')],
+                    [t('coefficient') + ' (r)', f'{r:.4f}', f'{strength} {direction.lower()} {t("pdf_relationship")}'],
+                    ['p-value', f'{p:.4f}', f'{t("pdf_statistically_sig") if p < 0.05 else t("pdf_not_statistically_sig")} (α = 0.05)'],
+                    [t('pdf_sample_size') + ' (n)', str(len(data)), t('pdf_num_obs')],
+                    [t('strength'), strength, t('strength')],
+                    [t('direction'), direction, t('positive') if r > 0 else t('negative')],
                 ]
                 
                 corr_table = Table(corr_data, colWidths=[2*inch, 1.5*inch, 3*inch])
@@ -1615,37 +1613,34 @@ with tab3:
                 story.append(corr_table)
                 story.append(Spacer(1, 0.3*inch))
                 
-                # Scatter Plot with Regression Line
-                story.append(Paragraph("Scatter Plot with Trend Line:", subheading_style))
+                # Scatter Plot
+                story.append(Paragraph(t('pdf_scatter_plot'), subheading_style))
                 story.append(Spacer(1, 0.1*inch))
                 
                 try:
                     fig_scatter, ax_scatter = plt.subplots(figsize=(7, 5))
                     
-                    # Scatter plot
                     scatter = ax_scatter.scatter(data["X_total"], data["Y_total"], 
                                                 alpha=0.6, s=80, c=data["Y_total"], 
                                                 cmap='viridis', edgecolors='white', linewidth=1)
                     
-                    # Add regression line
                     z = np.polyfit(data["X_total"].dropna(), data["Y_total"].dropna(), 1)
                     p_fit = np.poly1d(z)
                     x_line = np.linspace(data["X_total"].min(), data["X_total"].max(), 100)
                     ax_scatter.plot(x_line, p_fit(x_line), "r--", linewidth=3, alpha=0.8, 
-                                   label=f'Trend Line: y = {z[0]:.3f}x + {z[1]:.3f}')
+                                   label=f'{t("pdf_trend_line")}: y = {z[0]:.3f}x + {z[1]:.3f}')
                     
-                    ax_scatter.set_xlabel("X_total (Independent Variable)", fontsize=12, fontweight='bold')
-                    ax_scatter.set_ylabel("Y_total (Dependent Variable)", fontsize=12, fontweight='bold')
-                    ax_scatter.set_title(f'{method} Correlation Analysis\nr = {r:.4f}, p = {p:.4f}, n = {len(data)}', 
+                    ax_scatter.set_xlabel("X_total", fontsize=12, fontweight='bold')
+                    ax_scatter.set_ylabel("Y_total", fontsize=12, fontweight='bold')
+                    ax_scatter.set_title(f'{method}\nr = {r:.4f}, p = {p:.4f}, n = {len(data)}', 
                                         fontsize=13, fontweight='bold', pad=15)
                     ax_scatter.legend(fontsize=10, loc='best', framealpha=0.95)
                     ax_scatter.grid(True, alpha=0.3, linestyle='--')
                     ax_scatter.spines['top'].set_visible(False)
                     ax_scatter.spines['right'].set_visible(False)
                     
-                    # Add colorbar
                     cbar = plt.colorbar(scatter, ax=ax_scatter)
-                    cbar.set_label('Y_total Value', fontsize=10, fontweight='bold')
+                    cbar.set_label('Y_total', fontsize=10, fontweight='bold')
                     
                     plt.tight_layout()
                     
@@ -1657,107 +1652,81 @@ with tab3:
                     img_scatter = Image(scatter_buffer, width=6*inch, height=4.3*inch)
                     story.append(img_scatter)
                 except Exception as e:
-                    story.append(Paragraph(f"<i>Scatter plot error: {str(e)}</i>", body_style))
+                    story.append(Paragraph(f"<i>Error: {str(e)}</i>", body_style))
                 
                 story.append(PageBreak())
                 
-                # =============== PAGE 5: INTERPRETATION & FINDINGS ===============
-                story.append(Paragraph("4. INTERPRETATION OF RESULTS", heading_style))
-                story.append(Paragraph("Detailed interpretation of the correlation analysis findings:", body_style))
+                # =============== PAGE 5: INTERPRETATION ===============
+                story.append(Paragraph(f"4. {t('pdf_interpretation').upper()}", heading_style))
+                story.append(Paragraph(t('pdf_key_findings'), body_style))
                 story.append(Spacer(1, 0.2*inch))
                 
-                # Strength interpretation
-                story.append(Paragraph("4.1 Strength of Relationship", subheading_style))
-                substantial_text = "substantial" if abs(r) > 0.5 else "moderate to weak"
-                strength_interp = f"""The correlation coefficient of <b>r = {r:.4f}</b> indicates a <b>{strength.lower()}</b> relationship between X and Y variables. 
-                This suggests that there is {substantial_text} association between the variables. In practical terms, 
-                {'this strong correlation indicates that changes in X are consistently associated with changes in Y.' if abs(r) > 0.5 else 'while a relationship exists, other factors may also influence the outcome.'}"""
+                # Strength
+                story.append(Paragraph(t('pdf_strength_rel'), subheading_style))
+                substantial_text = t('pdf_substantial') if abs(r) > 0.5 else t('pdf_moderate')
+                strength_interp = f"""{t('pdf_strength_text_1')} <b>{r:.4f}</b> {t('pdf_strength_text_2')} <b>{strength.lower()}</b> {t('pdf_strength_text_3')} 
+                {substantial_text} {t('pdf_between_vars')}"""
                 story.append(Paragraph(strength_interp, body_style))
                 story.append(Spacer(1, 0.15*inch))
                 
-                # Direction interpretation
-                story.append(Paragraph("4.2 Direction of Relationship", subheading_style))
-                direction_text = "increase as well" if r > 0 else "decrease"
-                movement = "same direction" if r > 0 else "opposite directions"
-                dir_interp = f"""The <b>{direction.lower()}</b> correlation coefficient indicates that as X increases, Y tends to <b>{direction_text}</b>. 
-                This {'direct' if r > 0 else 'inverse'} relationship suggests that both variables move in {movement}. 
-                {'Higher values of X are associated with higher values of Y.' if r > 0 else 'Higher values of X are associated with lower values of Y.'}"""
+                # Direction
+                story.append(Paragraph(t('pdf_direction_rel'), subheading_style))
+                direction_text = t('pdf_increase') if r > 0 else t('pdf_decrease')
+                movement = t('pdf_same_direction') if r > 0 else t('pdf_opposite_direction')
+                dir_type = t('pdf_direct') if r > 0 else t('pdf_inverse')
+                dir_interp = f"""{t('pdf_direction_text_1')} <b>{direction.lower()}</b> {t('pdf_direction_text_2')} <b>{direction_text}</b>. 
+                {t('pdf_direction_text_3')} <b>{dir_type}</b> {t('pdf_direction_text_4')} {movement}."""
                 story.append(Paragraph(dir_interp, body_style))
                 story.append(Spacer(1, 0.15*inch))
                 
-                # Statistical significance
-                story.append(Paragraph("4.3 Statistical Significance", subheading_style))
-                sig_interp = f"""With a p-value of <b>{p:.4f}</b>, the relationship is <b>{'statistically significant' if p < 0.05 else 'not statistically significant'}</b> at the α = 0.05 level. 
-                This means {'we can reject the null hypothesis and conclude that the observed correlation is unlikely to have occurred by random chance alone. The relationship observed in the sample is likely to exist in the population.' if p < 0.05 else 'we cannot reject the null hypothesis. The observed correlation may be due to random variation in the sample, and we cannot confidently conclude that a relationship exists in the population.'}"""
+                # Significance
+                story.append(Paragraph(t('pdf_stat_sig'), subheading_style))
+                sig_result = t('pdf_reject_null') if p < 0.05 else t('pdf_cannot_reject')
+                sig_interp = f"""{t('pdf_sig_text_1')} <b>{p:.4f}</b>, {t('pdf_sig_text_2')} <b>{t('significant') if p < 0.05 else t('not_significant')}</b>. 
+                {t('pdf_sig_text_3')} {sig_result}."""
                 story.append(Paragraph(sig_interp, body_style))
                 story.append(Spacer(1, 0.15*inch))
                 
-                # Important note
-                story.append(Paragraph("4.4 Important Considerations", subheading_style))
-                note_text = f"""<b>Correlation does not imply causation.</b> While we observe {'a statistically significant association' if p < 0.05 else 'an association'} between the variables, 
-                this analysis alone cannot determine if one variable causes changes in the other. Additional research, including experimental designs or longitudinal studies, 
-                would be needed to establish causal relationships. Other confounding variables may also influence the observed relationship."""
+                # Important Note
+                story.append(Paragraph(t('pdf_important_note'), subheading_style))
+                note_text = f"""<b>{t('pdf_causation')}</b> {t('pdf_sig_association') if p < 0.05 else t('pdf_an_association')} {t('pdf_causation_text')}"""
                 story.append(Paragraph(note_text, body_style))
                 story.append(PageBreak())
                 
-                # =============== PAGE 6: CONCLUSION & RECOMMENDATIONS ===============
-                story.append(Paragraph("5. CONCLUSION", heading_style))
+                # =============== PAGE 6: CONCLUSION ===============
+                story.append(Paragraph(f"5. {t('pdf_conclusion').upper()}", heading_style))
                 story.append(Spacer(1, 0.2*inch))
                 
-                story.append(Paragraph("5.1 Summary of Key Findings", subheading_style))
+                story.append(Paragraph(t('pdf_summary'), subheading_style))
                 
                 findings_list = f"""
-                <b>1. Descriptive Analysis:</b> Successfully analyzed {len(variables_to_analyze)} variables, revealing meaningful patterns 
-                in the data distribution. Central tendency measures and dispersion statistics provide a comprehensive understanding of each variable.<br/><br/>
+                <b>1. {t('pdf_desc_analysis_sum')}</b> {t('pdf_desc_text')} {len(variables_to_analyze)} {t('pdf_desc_text_2')}<br/><br/>
                 
-                <b>2. Composite Scores:</b> Created reliable aggregate measures (X_total and Y_total) that improve measurement reliability 
-                by reducing random error and providing more stable estimates of the underlying constructs.<br/><br/>
+                <b>2. {t('pdf_composite')}</b> {t('pdf_composite_text')}<br/><br/>
                 
-                <b>3. Normality Assessment:</b> Shapiro-Wilk tests determined that {'both variables follow normal distributions, supporting the use of parametric methods' if x_norm > 0.05 and y_norm > 0.05 else 'at least one variable deviates from normality, necessitating the use of non-parametric methods'}.<br/><br/>
+                <b>3. {t('pdf_corr_analysis_sum')}</b> {t('pdf_corr_text_1')} <b>{strength.lower()} {direction.lower()}</b> (r = {r:.4f}) 
+                {t('pdf_corr_text_2')} <b>{t('significant') if p < 0.05 else t('not_significant')}</b> {t('pdf_corr_text_3')}<br/><br/>
                 
-                <b>4. Correlation Analysis:</b> Found a <b>{strength.lower()} {direction.lower()}</b> relationship (r = {r:.4f}) 
-                that is <b>{'statistically significant' if p < 0.05 else 'not statistically significant'}</b> at the 0.05 level (p = {p:.4f}).<br/><br/>
+                <b>4. {t('pdf_method_rigor')}</b> {t('pdf_method_text')} ({method}) {t('pdf_method_text_2')}<br/><br/>
                 
-                <b>5. Methodological Rigor:</b> Applied appropriate statistical methods ({method}) based on data distribution characteristics, 
-                ensuring valid and reliable results that meet academic standards.
+                <b>5. {t('pdf_academic')}</b> {t('pdf_academic_text')}
                 """
                 story.append(Paragraph(findings_list, body_style))
                 story.append(Spacer(1, 0.3*inch))
                 
                 # Recommendations
-                story.append(Paragraph("5.2 Recommendations for Future Research", subheading_style))
-                recommendations = """
-                <b>1. Extended Analysis:</b> Consider conducting additional analyses to explore potential confounding variables, 
-                mediating factors, or moderating effects that might influence the observed relationship.<br/><br/>
-                
-                <b>2. Subgroup Analysis:</b> Examine whether the relationship differs across demographic subgroups or other relevant 
-                categories to identify potential variation in effects.<br/><br/>
-                
-                <b>3. Replication Studies:</b> Replicate findings with independent samples from different populations to validate 
-                the generalizability and robustness of the results.<br/><br/>
-                
-                <b>4. Qualitative Integration:</b> Consider incorporating qualitative methods (interviews, focus groups) to better 
-                understand the mechanisms and processes underlying the observed statistical relationships.<br/><br/>
-                
-                <b>5. Longitudinal Investigation:</b> If feasible, conduct longitudinal studies to examine changes over time and 
-                potentially establish temporal precedence, which is necessary for causal inference.
+                story.append(Paragraph(t('pdf_recommendations'), subheading_style))
+                recommendations = f"""
+                <b>1.</b> {t('pdf_rec_1')}<br/><br/>
+                <b>2.</b> {t('pdf_rec_2')}<br/><br/>
+                <b>3.</b> {t('pdf_rec_3')}<br/><br/>
+                <b>4.</b> {t('pdf_rec_4')}
                 """
                 story.append(Paragraph(recommendations, body_style))
-                story.append(Spacer(1, 0.4*inch))
-                
-                # Academic Reporting Note
-                story.append(Paragraph("5.3 Academic Reporting", subheading_style))
-                academic_text = """These results are suitable for inclusion in academic papers, theses, and research reports. 
-                When reporting, ensure proper citation of statistical methods, acknowledgment of limitations (particularly regarding 
-                causality), and transparent reporting of all relevant statistical parameters including effect sizes, confidence intervals, 
-                and sample characteristics."""
-                story.append(Paragraph(academic_text, body_style))
                 
                 # Footer
                 story.append(Spacer(1, 0.6*inch))
-                footer_text = f"""<i>Report generated by Data Analytics Platform | © 2024 Group 3 Project<br/>
-                Generated on {datetime.now().strftime('%B %d, %Y at %H:%M:%S')}<br/>
-                This report contains {len([s for s in story if isinstance(s, PageBreak)])+1} pages of comprehensive statistical analysis.</i>"""
+                footer_text = f"""<i>{t('pdf_footer')} {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</i>"""
                 story.append(Paragraph(footer_text, ParagraphStyle('Footer', parent=body_style, fontSize=9, alignment=TA_CENTER, textColor=colors.grey, leading=12)))
                 
                 # Build PDF
@@ -1765,16 +1734,16 @@ with tab3:
                 pdf_buffer.seek(0)
                 
                 st.download_button(
-                    label=f"📥 Download Complete Analysis Report (PDF)",
+                    label=f"📥 {t('pdf_download_btn')}",
                     data=pdf_buffer,
-                    file_name=f"statistical_analysis_complete_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                    file_name=f"statistical_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
                     mime="application/pdf",
                     type="primary",
                     use_container_width=True
                 )
                 
-                st.success("✅ PDF report generated successfully!")
-                st.info(f"📊 This comprehensive report includes {len([s for s in story if isinstance(s, PageBreak)])+1} pages with: Executive Summary, Complete Descriptive Statistics for ALL variables, Normality Tests, Correlation Analysis with visualizations, Detailed Interpretations, and Research Recommendations.")
+                st.success(f"✅ {t('pdf_success')}")
+                st.info(f"📊 {t('pdf_includes')}")
                 
             except ImportError:
                 st.error("❌ ReportLab library not found. Install with: pip install reportlab")
@@ -1784,3 +1753,4 @@ with tab3:
                 st.code(traceback.format_exc())
             
             st.markdown("</div>", unsafe_allow_html=True)
+
