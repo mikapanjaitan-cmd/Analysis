@@ -1365,296 +1365,293 @@ with tab3:
             </div>
             """, unsafe_allow_html=True)
             
-            # PDF GENERATION WITH CHARTS - MULTILINGUAL
-            st.markdown("<br><br>", unsafe_allow_html=True)
-            st.markdown("<div class='content-box'>", unsafe_allow_html=True)
-            st.markdown("## 📄 Download Report")
+            # PDF GENERATION WITH CHARTS - MULTILINGUAL (FIXED FOR CLOUD)
+st.markdown("<br><br>", unsafe_allow_html=True)
+st.markdown("<div class='content-box'>", unsafe_allow_html=True)
+st.markdown("## 📄 Download Report")
+
+try:
+    from reportlab.lib.pagesizes import letter, A4
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
+    from io import BytesIO
+    
+    pdf_buffer = BytesIO()
+    doc = SimpleDocTemplate(pdf_buffer, pagesize=letter, rightMargin=50, leftMargin=50, topMargin=50, bottomMargin=30)
+    
+    story = []
+    styles = getSampleStyleSheet()
+    
+    # Custom styles
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=24, textColor=colors.HexColor('#0d47a1'), spaceAfter=30, alignment=TA_CENTER, fontName='Helvetica-Bold')
+    heading_style = ParagraphStyle('CustomHeading', parent=styles['Heading2'], fontSize=16, textColor=colors.HexColor('#1565c0'), spaceAfter=12, spaceBefore=12, fontName='Helvetica-Bold')
+    subheading_style = ParagraphStyle('CustomSubHeading', parent=styles['Heading3'], fontSize=14, textColor=colors.HexColor('#1976d2'), spaceAfter=10, spaceBefore=10, fontName='Helvetica-Bold')
+    body_style = ParagraphStyle('CustomBody', parent=styles['Normal'], fontSize=11, alignment=TA_JUSTIFY, spaceAfter=12)
+    
+    # === PAGE 1: COVER & SUMMARY ===
+    story.append(Paragraph(f"📊 {t('pdf_title')}", title_style))
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Dataset Info Box
+    info_data = [
+        [t('pdf_report_info'), ''],
+        [t('pdf_generated'), datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
+        [t('pdf_total_resp'), str(len(data))],
+        [t('pdf_x_vars'), ', '.join(x_items) if x_items else 'N/A'],
+        [t('pdf_y_vars'), ', '.join(y_items) if y_items else 'N/A'],
+    ]
+    info_table = Table(info_data, colWidths=[2.5*inch, 4*inch])
+    info_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1565c0')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#e3f2fd')),
+        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#1565c0')),
+        ('FONTNAME', (0, 1), (0, -1), 'Helvetica-Bold'),
+    ]))
+    story.append(info_table)
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Executive Summary
+    story.append(Paragraph(t('pdf_exec_summary'), heading_style))
+    summary_text = f"""{t('pdf_exec_text_1')} {len(data)} {t('pdf_exec_text_2')} <b>{strength.lower()}</b> {direction.lower()} {t('pdf_exec_text_3')} {r:.3f}, {t('pdf_exec_text_4')} {p:.4f}). {t('pdf_exec_text_5')} <b>{t('pdf_statistically_sig') if p < 0.05 else t('pdf_not_statistically_sig')}</b> {t('pdf_exec_text_6')} ({method}) {t('pdf_exec_text_7')}"""
+    story.append(Paragraph(summary_text, body_style))
+    
+    story.append(PageBreak())
+    
+    # === PAGE 2: DESCRIPTIVE STATISTICS ===
+    story.append(Paragraph(f"1. {t('pdf_desc_stats')}", heading_style))
+    
+    # Loop through all analyzed variables
+    for idx, col in enumerate(variables_to_analyze[:3]):  # Limit to first 3 for PDF space
+        if col not in data.columns:
+            continue
+        
+        story.append(Paragraph(f"{t('pdf_variable')} {col}", subheading_style))
+        series = data[col]
+        
+        if pd.api.types.is_numeric_dtype(series):
+            desc = descriptive_numeric(series)
             
+            # Statistics table
+            stats_data = [
+                [t('pdf_statistic'), t('pdf_value')],
+                [t('count'), str(desc[t('count')])],
+                [t('mean'), f"{desc[t('mean')]:.2f}"],
+                [t('median'), f"{desc[t('median')]:.2f}"],
+                [t('std_dev'), f"{desc[t('std_dev')]:.2f}"],
+                [t('min'), f"{desc[t('min')]:.2f}"],
+                [t('max'), f"{desc[t('max')]:.2f}"],
+            ]
+            stats_table = Table(stats_data, colWidths=[2*inch, 2*inch])
+            stats_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e3f2fd')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#0d47a1')),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+                ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ]))
+            story.append(stats_table)
+            story.append(Spacer(1, 0.2*inch))
+            
+            # Save histogram to BytesIO and add to PDF
             try:
-                from reportlab.lib.pagesizes import letter, A4
-                from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-                from reportlab.lib.units import inch
-                from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image
-                from reportlab.lib import colors
-                from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
-                from io import BytesIO
-                import tempfile
-                import os
+                fig_hist, ax_hist = plt.subplots(figsize=(6, 3))
+                clean_data = series.dropna()
+                ax_hist.hist(clean_data, bins=15, alpha=0.7, color='#1e88e5', edgecolor='white')
+                ax_hist.set_title(f'{t("pdf_distribution")} {col}', fontsize=11, fontweight='bold')
+                ax_hist.set_xlabel(col, fontsize=9)
+                ax_hist.set_ylabel(t('frequency'), fontsize=9)
+                ax_hist.grid(True, alpha=0.3)
                 
-                pdf_buffer = BytesIO()
-                doc = SimpleDocTemplate(pdf_buffer, pagesize=letter, rightMargin=50, leftMargin=50, topMargin=50, bottomMargin=30)
+                # Save to BytesIO instead of temp file
+                img_buffer = BytesIO()
+                fig_hist.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
+                img_buffer.seek(0)
+                plt.close(fig_hist)
                 
-                story = []
-                styles = getSampleStyleSheet()
-                
-                # Custom styles
-                title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=24, textColor=colors.HexColor('#0d47a1'), spaceAfter=30, alignment=TA_CENTER, fontName='Helvetica-Bold')
-                heading_style = ParagraphStyle('CustomHeading', parent=styles['Heading2'], fontSize=16, textColor=colors.HexColor('#1565c0'), spaceAfter=12, spaceBefore=12, fontName='Helvetica-Bold')
-                subheading_style = ParagraphStyle('CustomSubHeading', parent=styles['Heading3'], fontSize=14, textColor=colors.HexColor('#1976d2'), spaceAfter=10, spaceBefore=10, fontName='Helvetica-Bold')
-                body_style = ParagraphStyle('CustomBody', parent=styles['Normal'], fontSize=11, alignment=TA_JUSTIFY, spaceAfter=12)
-                
-                # === PAGE 1: COVER & SUMMARY ===
-                story.append(Paragraph(f"📊 {t('pdf_title')}", title_style))
-                story.append(Spacer(1, 0.3*inch))
-                
-                # Dataset Info Box
-                info_data = [
-                    [t('pdf_report_info'), ''],
-                    [t('pdf_generated'), datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
-                    [t('pdf_total_resp'), str(len(data))],
-                    [t('pdf_x_vars'), ', '.join(x_items) if x_items else 'N/A'],
-                    [t('pdf_y_vars'), ', '.join(y_items) if y_items else 'N/A'],
-                ]
-                info_table = Table(info_data, colWidths=[2.5*inch, 4*inch])
-                info_table.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1565c0')),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                    ('FONTSIZE', (0, 0), (-1, 0), 12),
-                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                    ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#e3f2fd')),
-                    ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#1565c0')),
-                    ('FONTNAME', (0, 1), (0, -1), 'Helvetica-Bold'),
-                ]))
-                story.append(info_table)
-                story.append(Spacer(1, 0.3*inch))
-                
-                # Executive Summary
-                story.append(Paragraph(t('pdf_exec_summary'), heading_style))
-                summary_text = f"""{t('pdf_exec_text_1')} {len(data)} {t('pdf_exec_text_2')} <b>{strength.lower()}</b> {direction.lower()} {t('pdf_exec_text_3')} {r:.3f}, {t('pdf_exec_text_4')} {p:.4f}). {t('pdf_exec_text_5')} <b>{t('pdf_statistically_sig') if p < 0.05 else t('pdf_not_statistically_sig')}</b> {t('pdf_exec_text_6')} ({method}) {t('pdf_exec_text_7')}"""
-                story.append(Paragraph(summary_text, body_style))
-                
-                story.append(PageBreak())
-                
-                # === PAGE 2: DESCRIPTIVE STATISTICS ===
-                story.append(Paragraph(f"1. {t('pdf_desc_stats')}", heading_style))
-                
-                # Loop through all analyzed variables
-                for idx, col in enumerate(variables_to_analyze[:3]):  # Limit to first 3 for PDF space
-                    if col not in data.columns:
-                        continue
-                    
-                    story.append(Paragraph(f"{t('pdf_variable')} {col}", subheading_style))
-                    series = data[col]
-                    
-                    if pd.api.types.is_numeric_dtype(series):
-                        desc = descriptive_numeric(series)
-                        
-                        # Statistics table
-                        stats_data = [
-                            [t('pdf_statistic'), t('pdf_value')],
-                            [t('count'), str(desc[t('count')])],
-                            [t('mean'), f"{desc[t('mean')]:.2f}"],
-                            [t('median'), f"{desc[t('median')]:.2f}"],
-                            [t('std_dev'), f"{desc[t('std_dev')]:.2f}"],
-                            [t('min'), f"{desc[t('min')]:.2f}"],
-                            [t('max'), f"{desc[t('max')]:.2f}"],
-                        ]
-                        stats_table = Table(stats_data, colWidths=[2*inch, 2*inch])
-                        stats_table.setStyle(TableStyle([
-                            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e3f2fd')),
-                            ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#0d47a1')),
-                            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                            ('GRID', (0, 0), (-1, -1), 1, colors.grey),
-                            ('FONTSIZE', (0, 0), (-1, -1), 10),
-                        ]))
-                        story.append(stats_table)
-                        story.append(Spacer(1, 0.2*inch))
-                        
-                        # Save histogram to temporary file and add to PDF
-                        try:
-                            fig_hist, ax_hist = plt.subplots(figsize=(6, 3))
-                            clean_data = series.dropna()
-                            ax_hist.hist(clean_data, bins=15, alpha=0.7, color='#1e88e5', edgecolor='white')
-                            ax_hist.set_title(f'{t("pdf_distribution")} {col}', fontsize=11, fontweight='bold')
-                            ax_hist.set_xlabel(col, fontsize=9)
-                            ax_hist.set_ylabel(t('frequency'), fontsize=9)
-                            ax_hist.grid(True, alpha=0.3)
-                            
-                            # Save to temporary file
-                            temp_img = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
-                            fig_hist.savefig(temp_img.name, format='png', dpi=150, bbox_inches='tight')
-                            plt.close(fig_hist)
-                            
-                            # Add image to PDF
-                            img = Image(temp_img.name, width=5*inch, height=2.5*inch)
-                            story.append(img)
-                            story.append(Spacer(1, 0.2*inch))
-                            
-                            # Clean up temp file
-                            os.unlink(temp_img.name)
-                        except Exception as e:
-                            story.append(Paragraph(f"<i>Chart generation error: {str(e)}</i>", body_style))
-                    
-                    if idx < len(variables_to_analyze) - 1:
-                        story.append(Spacer(1, 0.2*inch))
-                
-                story.append(PageBreak())
-                
-                # === PAGE 3: NORMALITY TESTING ===
-                story.append(Paragraph(f"2. {t('pdf_normality_test')}", heading_style))
-                story.append(Paragraph(t('pdf_normality_text'), body_style))
-                story.append(Spacer(1, 0.1*inch))
-                
-                norm_data = [
-                    [t('variable'), t('p_value'), t('distribution'), t('pdf_interpretation_col')],
-                    ['X_total', f'{x_norm:.4f}', t('normal') if x_norm > 0.05 else t('non_normal'), 
-                     t('pdf_data_follows') if x_norm > 0.05 else t('pdf_data_not_follows')],
-                    ['Y_total', f'{y_norm:.4f}', t('normal') if y_norm > 0.05 else t('non_normal'),
-                     t('pdf_data_follows') if y_norm > 0.05 else t('pdf_data_not_follows')]
-                ]
-                norm_table = Table(norm_data, colWidths=[1.3*inch, 1*inch, 1.3*inch, 2.9*inch])
-                norm_table.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e3f2fd')),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#0d47a1')),
-                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                    ('FONTSIZE', (0, 0), (-1, -1), 9),
-                    ('GRID', (0, 0), (-1, -1), 1, colors.grey),
-                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ]))
-                story.append(norm_table)
+                # Add image to PDF from BytesIO
+                img = Image(img_buffer, width=5*inch, height=2.5*inch)
+                story.append(img)
                 story.append(Spacer(1, 0.2*inch))
                 
-                method_suitability = t('pdf_pearson_suitable') if method == t('pearson') else t('pdf_spearman_suitable')
-                method_text = f"""<b>{t('pdf_selected_method')}</b> {t('pdf_method_text_1')} <b>{method}</b> {t('pdf_method_text_2')} {method_suitability}"""
-                story.append(Paragraph(method_text, body_style))
-                
-                story.append(PageBreak())
-                
-                # === PAGE 4: CORRELATION ANALYSIS ===
-                story.append(Paragraph(f"3. {t('pdf_corr_analysis')}", heading_style))
-                
-                # Correlation results table
-                corr_data = [
-                    [t('pdf_metric'), t('pdf_value'), t('pdf_interp')],
-                    [t('method'), method, t('pdf_method_used')],
-                    [t('coefficient'), f'{r:.3f}', f'{strength} {direction.lower()} {t("pdf_relationship")}'],
-                    [t('p_value'), f'{p:.4f}', t('significant') if p < 0.05 else t('not_significant')],
-                    [t('pdf_sample_size'), str(len(data)), t('pdf_num_obs')],
-                ]
-                corr_table = Table(corr_data, colWidths=[2*inch, 1.8*inch, 2.7*inch])
-                corr_table.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e3f2fd')),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#0d47a1')),
-                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                    ('ALIGN', (0, 0), (1, -1), 'CENTER'),
-                    ('ALIGN', (2, 0), (2, -1), 'LEFT'),
-                    ('GRID', (0, 0), (-1, -1), 1, colors.grey),
-                    ('FONTSIZE', (0, 0), (-1, -1), 10),
-                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ]))
-                story.append(corr_table)
-                story.append(Spacer(1, 0.3*inch))
-                
-                # Scatter plot with regression line
-                story.append(Paragraph(t('pdf_scatter_plot'), subheading_style))
-                try:
-                    fig_scatter, ax_scatter = plt.subplots(figsize=(6, 4))
-                    ax_scatter.scatter(data["X_total"], data["Y_total"], alpha=0.6, s=50, c='#1e88e5', edgecolors='white')
-                    
-                    # Add trend line
-                    z = np.polyfit(data["X_total"].dropna(), data["Y_total"].dropna(), 1)
-                    p_fit = np.poly1d(z)
-                    x_line = np.linspace(data["X_total"].min(), data["X_total"].max(), 100)
-                    ax_scatter.plot(x_line, p_fit(x_line), "r--", linewidth=2, alpha=0.8, label=t('pdf_trend_line'))
-                    
-                    ax_scatter.set_xlabel("X_total", fontsize=11, fontweight='bold')
-                    ax_scatter.set_ylabel("Y_total", fontsize=11, fontweight='bold')
-                    ax_scatter.set_title(f'{method}\nr = {r:.3f}, p = {p:.4f}', fontsize=12, fontweight='bold')
-                    ax_scatter.legend(fontsize=9)
-                    ax_scatter.grid(True, alpha=0.3)
-                    
-                    # Save to temporary file
-                    temp_scatter = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
-                    fig_scatter.savefig(temp_scatter.name, format='png', dpi=150, bbox_inches='tight')
-                    plt.close(fig_scatter)
-                    
-                    # Add to PDF
-                    img_scatter = Image(temp_scatter.name, width=5.5*inch, height=3.7*inch)
-                    story.append(img_scatter)
-                    
-                    # Clean up
-                    os.unlink(temp_scatter.name)
-                except Exception as e:
-                    story.append(Paragraph(f"<i>Scatter plot error: {str(e)}</i>", body_style))
-                
-                story.append(PageBreak())
-                
-                # === PAGE 5: INTERPRETATION & CONCLUSION ===
-                story.append(Paragraph(f"4. {t('pdf_interpretation')}", heading_style))
-                
-                substantial_or_moderate = t('pdf_substantial') if abs(r) > 0.5 else t('pdf_moderate')
-                increase_or_decrease = t('pdf_increase') if r > 0 else t('pdf_decrease')
-                direct_or_inverse = t('pdf_direct') if r > 0 else t('pdf_inverse')
-                same_or_opposite = t('pdf_same_direction') if r > 0 else t('pdf_opposite_direction')
-                sig_status = t('pdf_statistically_sig') if p < 0.05 else t('pdf_not_statistically_sig')
-                reject_or_not = t('pdf_reject_null') if p < 0.05 else t('pdf_cannot_reject')
-                association_type = t('pdf_sig_association') if p < 0.05 else t('pdf_an_association')
-                
-                interp_text = f"""{t('pdf_key_findings')}
-                <br/><br/>
-                <b>1. {t('pdf_strength_rel')}</b><br/>
-                {t('pdf_strength_text_1')} {r:.3f} {t('pdf_strength_text_2')} <b>{strength.lower()}</b> {t('pdf_strength_text_3')} {substantial_or_moderate} {t('pdf_between_vars')}
-                <br/><br/>
-                <b>2. {t('pdf_direction_rel')}</b><br/>
-                {t('pdf_direction_text_1')} <b>{direction.lower()}</b> {t('pdf_direction_text_2')} {increase_or_decrease}. {t('pdf_direction_text_3')} {direct_or_inverse} {t('pdf_direction_text_4')} {same_or_opposite}.
-                <br/><br/>
-                <b>3. {t('pdf_stat_sig')}</b><br/>
-                {t('pdf_sig_text_1')} {p:.4f}, {t('pdf_sig_text_2')} <b>{sig_status}</b> (p {'<' if p < 0.05 else '≥'} 0.05). {t('pdf_sig_text_3')} {reject_or_not}.
-                <br/><br/>
-                <b>{t('pdf_important_note')}</b><br/>
-                <i>{t('pdf_causation')} {association_type} {t('pdf_causation_text')}</i>
-                """
-                story.append(Paragraph(interp_text, body_style))
-                story.append(Spacer(1, 0.3*inch))
-                
-                # Conclusion
-                story.append(Paragraph(f"5. {t('pdf_conclusion')}", heading_style))
-                sig_or_not = t('significant') if p < 0.05 else t('not_significant')
-                
-                conclusion_text = f"""<b>{t('pdf_summary')}</b><br/><br/>
-                1. <b>{t('pdf_desc_analysis_sum')}</b> {t('pdf_desc_text')} {len(variables_to_analyze)} {t('pdf_desc_text_2')}<br/><br/>
-                2. <b>{t('pdf_composite')}</b> {t('pdf_composite_text')}<br/><br/>
-                3. <b>{t('pdf_corr_analysis_sum')}</b> {t('pdf_corr_text_1')} {strength.lower()} {direction.lower()} (r = {r:.3f}) {t('pdf_corr_text_2')} {sig_or_not} {t('pdf_corr_text_3')}<br/><br/>
-                4. <b>{t('pdf_method_rigor')}</b> {t('pdf_method_text')} ({method}) {t('pdf_method_text_2')}<br/><br/>
-                5. <b>{t('pdf_academic')}</b> {t('pdf_academic_text')}<br/><br/>
-                <b>{t('pdf_recommendations')}</b><br/>
-                • {t('pdf_rec_1')}<br/>
-                • {t('pdf_rec_2')}<br/>
-                • {t('pdf_rec_3')}<br/>
-                • {t('pdf_rec_4')}
-                """
-                story.append(Paragraph(conclusion_text, body_style))
-                
-                # Footer
-                story.append(Spacer(1, 0.5*inch))
-                footer_text = f"""<i>{t('pdf_footer')} {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</i>"""
-                story.append(Paragraph(footer_text, ParagraphStyle('Footer', parent=body_style, fontSize=9, alignment=TA_CENTER, textColor=colors.grey)))
-                
-                # Build PDF
-                doc.build(story)
-                pdf_buffer.seek(0)
-                
-                # Download button
-                st.download_button(
-                    label=f"📥 {t('pdf_download_btn')}",
-                    data=pdf_buffer,
-                    file_name=f"statistical_analysis_full_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
-                    mime="application/pdf",
-                    type="primary",
-                    use_container_width=True
-                )
-                
-                st.success(f"✅ {t('pdf_success')}")
-                st.info(f"📊 {t('pdf_includes')}")
-                
-            except ImportError:
-                st.error("❌ ReportLab library not found. Install with: pip install reportlab")
             except Exception as e:
-                st.error(f"❌ Error generating PDF: {str(e)}")
-                st.exception(e)  # Show full traceback for debugging
-            
-            st.markdown("</div>", unsafe_allow_html=True)
+                story.append(Paragraph(f"<i>Chart generation error: {str(e)}</i>", body_style))
+        
+        if idx < len(variables_to_analyze) - 1:
+            story.append(Spacer(1, 0.2*inch))
+    
+    story.append(PageBreak())
+    
+    # === PAGE 3: NORMALITY TESTING ===
+    story.append(Paragraph(f"2. {t('pdf_normality_test')}", heading_style))
+    story.append(Paragraph(t('pdf_normality_text'), body_style))
+    story.append(Spacer(1, 0.1*inch))
+    
+    norm_data = [
+        [t('variable'), t('p_value'), t('distribution'), t('pdf_interpretation_col')],
+        ['X_total', f'{x_norm:.4f}', t('normal') if x_norm > 0.05 else t('non_normal'), 
+         t('pdf_data_follows') if x_norm > 0.05 else t('pdf_data_not_follows')],
+        ['Y_total', f'{y_norm:.4f}', t('normal') if y_norm > 0.05 else t('non_normal'),
+         t('pdf_data_follows') if y_norm > 0.05 else t('pdf_data_not_follows')]
+    ]
+    norm_table = Table(norm_data, colWidths=[1.3*inch, 1*inch, 1.3*inch, 2.9*inch])
+    norm_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e3f2fd')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#0d47a1')),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+    story.append(norm_table)
+    story.append(Spacer(1, 0.2*inch))
+    
+    method_suitability = t('pdf_pearson_suitable') if method == t('pearson') else t('pdf_spearman_suitable')
+    method_text = f"""<b>{t('pdf_selected_method')}</b> {t('pdf_method_text_1')} <b>{method}</b> {t('pdf_method_text_2')} {method_suitability}"""
+    story.append(Paragraph(method_text, body_style))
+    
+    story.append(PageBreak())
+    
+    # === PAGE 4: CORRELATION ANALYSIS ===
+    story.append(Paragraph(f"3. {t('pdf_corr_analysis')}", heading_style))
+    
+    # Correlation results table
+    corr_data = [
+        [t('pdf_metric'), t('pdf_value'), t('pdf_interp')],
+        [t('method'), method, t('pdf_method_used')],
+        [t('coefficient'), f'{r:.3f}', f'{strength} {direction.lower()} {t("pdf_relationship")}'],
+        [t('p_value'), f'{p:.4f}', t('significant') if p < 0.05 else t('not_significant')],
+        [t('pdf_sample_size'), str(len(data)), t('pdf_num_obs')],
+    ]
+    corr_table = Table(corr_data, colWidths=[2*inch, 1.8*inch, 2.7*inch])
+    corr_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e3f2fd')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#0d47a1')),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('ALIGN', (0, 0), (1, -1), 'CENTER'),
+        ('ALIGN', (2, 0), (2, -1), 'LEFT'),
+        ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+    story.append(corr_table)
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Scatter plot with regression line
+    story.append(Paragraph(t('pdf_scatter_plot'), subheading_style))
+    try:
+        fig_scatter, ax_scatter = plt.subplots(figsize=(6, 4))
+        ax_scatter.scatter(data["X_total"], data["Y_total"], alpha=0.6, s=50, c='#1e88e5', edgecolors='white')
+        
+        # Add trend line
+        z = np.polyfit(data["X_total"].dropna(), data["Y_total"].dropna(), 1)
+        p_fit = np.poly1d(z)
+        x_line = np.linspace(data["X_total"].min(), data["X_total"].max(), 100)
+        ax_scatter.plot(x_line, p_fit(x_line), "r--", linewidth=2, alpha=0.8, label=t('pdf_trend_line'))
+        
+        ax_scatter.set_xlabel("X_total", fontsize=11, fontweight='bold')
+        ax_scatter.set_ylabel("Y_total", fontsize=11, fontweight='bold')
+        ax_scatter.set_title(f'{method}\nr = {r:.3f}, p = {p:.4f}', fontsize=12, fontweight='bold')
+        ax_scatter.legend(fontsize=9)
+        ax_scatter.grid(True, alpha=0.3)
+        
+        # Save to BytesIO instead of temp file
+        scatter_buffer = BytesIO()
+        fig_scatter.savefig(scatter_buffer, format='png', dpi=150, bbox_inches='tight')
+        scatter_buffer.seek(0)
+        plt.close(fig_scatter)
+        
+        # Add to PDF from BytesIO
+        img_scatter = Image(scatter_buffer, width=5.5*inch, height=3.7*inch)
+        story.append(img_scatter)
+        
+    except Exception as e:
+        story.append(Paragraph(f"<i>Scatter plot error: {str(e)}</i>", body_style))
+    
+    story.append(PageBreak())
+    
+    # === PAGE 5: INTERPRETATION & CONCLUSION ===
+    story.append(Paragraph(f"4. {t('pdf_interpretation')}", heading_style))
+    
+    substantial_or_moderate = t('pdf_substantial') if abs(r) > 0.5 else t('pdf_moderate')
+    increase_or_decrease = t('pdf_increase') if r > 0 else t('pdf_decrease')
+    direct_or_inverse = t('pdf_direct') if r > 0 else t('pdf_inverse')
+    same_or_opposite = t('pdf_same_direction') if r > 0 else t('pdf_opposite_direction')
+    sig_status = t('pdf_statistically_sig') if p < 0.05 else t('pdf_not_statistically_sig')
+    reject_or_not = t('pdf_reject_null') if p < 0.05 else t('pdf_cannot_reject')
+    association_type = t('pdf_sig_association') if p < 0.05 else t('pdf_an_association')
+    
+    interp_text = f"""{t('pdf_key_findings')}
+    <br/><br/>
+    <b>1. {t('pdf_strength_rel')}</b><br/>
+    {t('pdf_strength_text_1')} {r:.3f} {t('pdf_strength_text_2')} <b>{strength.lower()}</b> {t('pdf_strength_text_3')} {substantial_or_moderate} {t('pdf_between_vars')}
+    <br/><br/>
+    <b>2. {t('pdf_direction_rel')}</b><br/>
+    {t('pdf_direction_text_1')} <b>{direction.lower()}</b> {t('pdf_direction_text_2')} {increase_or_decrease}. {t('pdf_direction_text_3')} {direct_or_inverse} {t('pdf_direction_text_4')} {same_or_opposite}.
+    <br/><br/>
+    <b>3. {t('pdf_stat_sig')}</b><br/>
+    {t('pdf_sig_text_1')} {p:.4f}, {t('pdf_sig_text_2')} <b>{sig_status}</b> (p {'<' if p < 0.05 else '≥'} 0.05). {t('pdf_sig_text_3')} {reject_or_not}.
+    <br/><br/>
+    <b>{t('pdf_important_note')}</b><br/>
+    <i>{t('pdf_causation')} {association_type} {t('pdf_causation_text')}</i>
+    """
+    story.append(Paragraph(interp_text, body_style))
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Conclusion
+    story.append(Paragraph(f"5. {t('pdf_conclusion')}", heading_style))
+    sig_or_not = t('significant') if p < 0.05 else t('not_significant')
+    
+    conclusion_text = f"""<b>{t('pdf_summary')}</b><br/><br/>
+    1. <b>{t('pdf_desc_analysis_sum')}</b> {t('pdf_desc_text')} {len(variables_to_analyze)} {t('pdf_desc_text_2')}<br/><br/>
+    2. <b>{t('pdf_composite')}</b> {t('pdf_composite_text')}<br/><br/>
+    3. <b>{t('pdf_corr_analysis_sum')}</b> {t('pdf_corr_text_1')} {strength.lower()} {direction.lower()} (r = {r:.3f}) {t('pdf_corr_text_2')} {sig_or_not} {t('pdf_corr_text_3')}<br/><br/>
+    4. <b>{t('pdf_method_rigor')}</b> {t('pdf_method_text')} ({method}) {t('pdf_method_text_2')}<br/><br/>
+    5. <b>{t('pdf_academic')}</b> {t('pdf_academic_text')}<br/><br/>
+    <b>{t('pdf_recommendations')}</b><br/>
+    • {t('pdf_rec_1')}<br/>
+    • {t('pdf_rec_2')}<br/>
+    • {t('pdf_rec_3')}<br/>
+    • {t('pdf_rec_4')}
+    """
+    story.append(Paragraph(conclusion_text, body_style))
+    
+    # Footer
+    story.append(Spacer(1, 0.5*inch))
+    footer_text = f"""<i>{t('pdf_footer')} {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</i>"""
+    story.append(Paragraph(footer_text, ParagraphStyle('Footer', parent=body_style, fontSize=9, alignment=TA_CENTER, textColor=colors.grey)))
+    
+    # Build PDF
+    doc.build(story)
+    pdf_buffer.seek(0)
+    
+    # Download button
+    st.download_button(
+        label=f"📥 {t('pdf_download_btn')}",
+        data=pdf_buffer,
+        file_name=f"statistical_analysis_full_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+        mime="application/pdf",
+        type="primary",
+        use_container_width=True
+    )
+    
+    st.success(f"✅ {t('pdf_success')}")
+    st.info(f"📊 {t('pdf_includes')}")
+    
+except ImportError:
+    st.error("❌ ReportLab library not found. Install with: pip install reportlab")
+except Exception as e:
+    st.error(f"❌ Error generating PDF: {str(e)}")
+    import traceback
+    st.code(traceback.format_exc())
+
+st.markdown("</div>", unsafe_allow_html=True)
