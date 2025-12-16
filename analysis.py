@@ -1366,409 +1366,610 @@ with tab3:
             """, unsafe_allow_html=True)
             
     # ==================== PDF GENERATION - COMPLETE & FORMATTED ====================
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    st.markdown("<div class='content-box'>", unsafe_allow_html=True)
-    st.markdown("## 📄 Download Report")
+st.markdown("<br><br>", unsafe_allow_html=True)
+st.markdown("<div class='content-box'>", unsafe_allow_html=True)
+st.markdown("## 📄 Download Report")
+
+try:
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT
     
-    try:
-        from reportlab.lib.pagesizes import letter
-        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.units import inch
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image
-        from reportlab.lib import colors
-        from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT
+    pdf_buffer = BytesIO()
+    doc = SimpleDocTemplate(pdf_buffer, pagesize=letter, rightMargin=50, leftMargin=50, topMargin=50, bottomMargin=30)
+    story = []
+    styles = getSampleStyleSheet()
+    
+    # Custom styles
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=26, textColor=colors.HexColor('#0d47a1'), spaceAfter=20, alignment=TA_CENTER, fontName='Helvetica-Bold')
+    heading_style = ParagraphStyle('CustomHeading', parent=styles['Heading2'], fontSize=18, textColor=colors.HexColor('#1565c0'), spaceAfter=15, spaceBefore=20, fontName='Helvetica-Bold')
+    subheading_style = ParagraphStyle('CustomSubHeading', parent=styles['Heading3'], fontSize=14, textColor=colors.HexColor('#1976d2'), spaceAfter=10, spaceBefore=15, fontName='Helvetica-Bold')
+    body_style = ParagraphStyle('CustomBody', parent=styles['Normal'], fontSize=11, alignment=TA_JUSTIFY, spaceAfter=10, leading=14)
+    
+    # =============== PAGE 1: COVER & EXECUTIVE SUMMARY ===============
+    story.append(Paragraph(t('pdf_title'), title_style))
+    story.append(Spacer(1, 0.5*inch))
+    
+    # Report Info Table - SEMUA STRING DITERJEMAHKAN
+    info_data = [
+        [t('pdf_report_info'), ''],
+        [t('pdf_generated'), datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
+        [t('pdf_total_resp'), str(len(data))],
+        [t('pdf_x_vars'), ', '.join(x_items) if x_items else 'N/A'],
+        [t('pdf_y_vars'), ', '.join(y_items) if y_items else 'N/A'],
+        [t('method'), method],
+    ]
+    info_table = Table(info_data, colWidths=[2.5*inch, 4*inch])
+    info_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1565c0')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 13),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('TOPPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f5f5f5')),
+        ('GRID', (0, 0), (-1, -1), 1.5, colors.HexColor('#1565c0')),
+        ('FONTNAME', (0, 1), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 1), (-1, -1), 11),
+        ('TOPPADDING', (0, 1), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
+    ]))
+    story.append(info_table)
+    story.append(Spacer(1, 0.4*inch))
+    
+    # Executive Summary - DITERJEMAHKAN
+    story.append(Paragraph(t('pdf_exec_summary'), heading_style))
+    
+    # Tentukan teks berdasarkan bahasa yang dipilih
+    if st.session_state.language == 'en':
+        summary_strength = "substantial" if abs(r) > 0.5 else "moderate"
+        sig_text = "statistically significant" if p < 0.05 else "not statistically significant"
+        summary_text = f"""This comprehensive statistical analysis examines the relationship between X and Y variables using data from <b>{len(data)} respondents</b>. 
+        The analysis reveals a <b>{strength.lower()} {direction.lower()}</b> relationship with a correlation coefficient of <b>r = {r:.3f}</b> and 
+        <b>p-value = {p:.4f}</b>. The relationship is <b>{sig_text}</b> at the α = 0.05 significance level. 
+        The <b>{method}</b> method was selected based on normality testing of the data distribution, ensuring appropriate statistical rigor."""
+    else:
+        summary_strength = "substansial" if abs(r) > 0.5 else "moderat"
+        sig_text = "signifikan secara statistik" if p < 0.05 else "tidak signifikan secara statistik"
+        summary_text = f"""Analisis statistik komprehensif ini memeriksa hubungan antara variabel X dan Y menggunakan data dari <b>{len(data)} responden</b>. 
+        Analisis mengungkapkan hubungan <b>{strength.lower()} {direction.lower()}</b> dengan koefisien korelasi <b>r = {r:.3f}</b> dan 
+        <b>nilai-p = {p:.4f}</b>. Hubungan ini <b>{sig_text}</b> pada tingkat signifikansi α = 0,05. 
+        Metode <b>{method}</b> dipilih berdasarkan pengujian normalitas distribusi data, memastikan ketelitian statistik yang tepat."""
+    
+    story.append(Paragraph(summary_text, body_style))
+    story.append(PageBreak())
+    
+    # =============== PAGE 2: DESCRIPTIVE STATISTICS (COMPLETE) ===============
+    story.append(Paragraph(t('pdf_desc_stats'), heading_style))
+    
+    if st.session_state.language == 'en':
+        desc_summary = "Complete analysis of all variables including central tendency, dispersion, and distribution characteristics."
+    else:
+        desc_summary = "Analisis lengkap semua variabel termasuk tendensi sentral, dispersi, dan karakteristik distribusi."
+    
+    story.append(Paragraph(desc_summary, body_style))
+    story.append(Spacer(1, 0.2*inch))
+    
+    # Analyze ALL variables
+    for idx, col in enumerate(variables_to_analyze):
+        if col not in data.columns:
+            continue
         
-        pdf_buffer = BytesIO()
-        doc = SimpleDocTemplate(pdf_buffer, pagesize=letter, rightMargin=50, leftMargin=50, topMargin=50, bottomMargin=30)
-        story = []
-        styles = getSampleStyleSheet()
+        story.append(Paragraph(f"{t('pdf_variable')} {col}", subheading_style))
+        series = data[col]
         
-        # Custom styles - menggunakan fungsi t() untuk semua string
-        title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=26, textColor=colors.HexColor('#0d47a1'), spaceAfter=20, alignment=TA_CENTER, fontName='Helvetica-Bold')
-        heading_style = ParagraphStyle('CustomHeading', parent=styles['Heading2'], fontSize=18, textColor=colors.HexColor('#1565c0'), spaceAfter=15, spaceBefore=20, fontName='Helvetica-Bold')
-        subheading_style = ParagraphStyle('CustomSubHeading', parent=styles['Heading3'], fontSize=14, textColor=colors.HexColor('#1976d2'), spaceAfter=10, spaceBefore=15, fontName='Helvetica-Bold')
-        body_style = ParagraphStyle('CustomBody', parent=styles['Normal'], fontSize=11, alignment=TA_JUSTIFY, spaceAfter=10, leading=14)
-        
-        # =============== PAGE 1: COVER & EXECUTIVE SUMMARY ===============
-        story.append(Paragraph(t('pdf_title'), title_style))
-        story.append(Spacer(1, 0.5*inch))
-        
-        # Report Info Table - SEMUA STRING DITERJEMAHKAN
-        info_data = [
-            [t('pdf_report_info'), ''],
-            [t('pdf_generated'), datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
-            [t('pdf_total_resp'), str(len(data))],
-            [t('pdf_x_vars'), ', '.join(x_items) if x_items else 'N/A'],
-            [t('pdf_y_vars'), ', '.join(y_items) if y_items else 'N/A'],
-            [t('method'), method],
-        ]
-        info_table = Table(info_data, colWidths=[2.5*inch, 4*inch])
-        info_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1565c0')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 13),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('TOPPADDING', (0, 0), (-1, 0), 12),
-            ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f5f5f5')),
-            ('GRID', (0, 0), (-1, -1), 1.5, colors.HexColor('#1565c0')),
-            ('FONTNAME', (0, 1), (0, -1), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 1), (-1, -1), 11),
-            ('TOPPADDING', (0, 1), (-1, -1), 8),
-            ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
-        ]))
-        story.append(info_table)
-        story.append(Spacer(1, 0.4*inch))
-        
-        # Executive Summary - DITERJEMAHKAN
-        story.append(Paragraph(t('pdf_exec_summary'), heading_style))
-        summary_strength = t('substantial') if abs(r) > 0.5 else t('moderate')
-        sig_text = t('pdf_statistically_sig') if p < 0.05 else t('pdf_not_statistically_sig')
-        
-        summary_text = f"""{t('pdf_exec_text_1')} <b>{len(data)} {t('pdf_exec_text_2').lower()}</b>. 
-        {t('pdf_exec_text_3')} <b>r = {r:.3f}</b> {t('pdf_exec_text_4')} <b>{p:.4f}</b>. 
-        {t('pdf_exec_text_5')} <b>{sig_text}</b> {t('pdf_exec_text_6')} α = 0.05. 
-        {t('pdf_exec_text_7')}"""
-        
-        story.append(Paragraph(summary_text, body_style))
-        story.append(PageBreak())
-        
-        # =============== PAGE 2: DESCRIPTIVE STATISTICS (COMPLETE) ===============
-        story.append(Paragraph(t('pdf_desc_stats'), heading_style))
-        story.append(Paragraph("Analisis lengkap semua variabel termasuk tendensi sentral, dispersi, dan karakteristik distribusi.", body_style))
-        story.append(Spacer(1, 0.2*inch))
-        
-        # Analyze ALL variables
-        for idx, col in enumerate(variables_to_analyze):
-            if col not in data.columns:
-                continue
+        if pd.api.types.is_numeric_dtype(series):
+            desc = descriptive_numeric(series)
             
-            story.append(Paragraph(f"{t('pdf_variable')} {col}", subheading_style))
-            series = data[col]
-            
-            if pd.api.types.is_numeric_dtype(series):
-                desc = descriptive_numeric(series)
-                
-                # Statistics table - DITERJEMAHKAN
+            # Statistics table - DITERJEMAHKAN dengan label yang benar
+            if st.session_state.language == 'en':
                 stats_data = [
                     [t('pdf_statistic'), t('pdf_value'), t('pdf_interpretation_col')],
-                    [t('count'), str(desc[t('count')]), 'Ukuran sampel'],
-                    [t('mean'), f"{desc[t('mean')]:.3f}", 'Nilai rata-rata'],
-                    [t('median'), f"{desc[t('median')]:.3f}", 'Nilai tengah (persentil ke-50)'],
-                    [t('std_dev'), f"{desc[t('std_dev')]:.3f}", 'Ukuran sebaran'],
-                    [t('variance'), f"{desc[t('variance')]:.3f}", 'Deviasi kuadrat'],
-                    [t('min'), f"{desc[t('min')]:.3f}", 'Nilai terendah yang diamati'],
-                    [t('max'), f"{desc[t('max')]:.3f}", 'Nilai tertinggi yang diamati'],
-                    [t('range'), f"{desc[t('max')] - desc[t('min')]:.3f}", 'Maks - Min'],
+                    ['Count (n)', str(desc[t('count')]), 'Sample size'],
+                    ['Mean (μ)', f"{desc[t('mean')]:.3f}", 'Average value'],
+                    ['Median', f"{desc[t('median')]:.3f}", 'Middle value (50th percentile)'],
+                    ['Std Dev (σ)', f"{desc[t('std_dev')]:.3f}", 'Measure of spread'],
+                    ['Variance (σ²)', f"{desc[t('variance')]:.3f}", 'Squared deviation'],
+                    ['Minimum', f"{desc[t('min')]:.3f}", 'Lowest observed value'],
+                    ['Maximum', f"{desc[t('max')]:.3f}", 'Highest observed value'],
+                    ['Range', f"{desc[t('max')] - desc[t('min')]:.3f}", 'Max - Min'],
                 ]
+            else:
+                stats_data = [
+                    [t('pdf_statistic'), t('pdf_value'), t('pdf_interpretation_col')],
+                    ['Jumlah (n)', str(desc[t('count')]), 'Ukuran sampel'],
+                    ['Rata-rata (μ)', f"{desc[t('mean')]:.3f}", 'Nilai rata-rata'],
+                    ['Median', f"{desc[t('median')]:.3f}", 'Nilai tengah (persentil ke-50)'],
+                    ['Deviasi Standar (σ)', f"{desc[t('std_dev')]:.3f}", 'Ukuran sebaran'],
+                    ['Varians (σ²)', f"{desc[t('variance')]:.3f}", 'Deviasi kuadrat'],
+                    ['Minimum', f"{desc[t('min')]:.3f}", 'Nilai terendah yang diamati'],
+                    ['Maksimum', f"{desc[t('max')]:.3f}", 'Nilai tertinggi yang diamati'],
+                    ['Rentang', f"{desc[t('max')] - desc[t('min')]:.3f}", 'Maks - Min'],
+                ]
+            
+            stats_table = Table(stats_data, colWidths=[1.5*inch, 1.3*inch, 3.7*inch])
+            stats_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e3f2fd')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#0d47a1')),
+                ('ALIGN', (0, 0), (1, -1), 'CENTER'),
+                ('ALIGN', (2, 0), (2, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+                ('FONTSIZE', (0, 0), (-1, -1), 10),
+                ('TOPPADDING', (0, 0), (-1, -1), 6),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9f9f9')]),
+            ]))
+            story.append(stats_table)
+            story.append(Spacer(1, 0.2*inch))
+            
+            # Histogram dengan label bahasa sesuai
+            try:
+                fig_hist, ax_hist = plt.subplots(figsize=(7, 3.5))
+                clean_data = series.dropna()
                 
-                stats_table = Table(stats_data, colWidths=[1.5*inch, 1.3*inch, 3.7*inch])
-                stats_table.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e3f2fd')),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#0d47a1')),
-                    ('ALIGN', (0, 0), (1, -1), 'CENTER'),
-                    ('ALIGN', (2, 0), (2, -1), 'LEFT'),
+                n, bins, patches = ax_hist.hist(clean_data, bins=20, alpha=0.75, color='#1e88e5', edgecolor='white', linewidth=1.5)
+                
+                # Add mean and median lines dengan label bahasa yang benar
+                mean_label = f'{t("mean")}: {desc[t("mean")]:.2f}'
+                median_label = f'{t("median")}: {desc[t("median")]:.2f}'
+                ax_hist.axvline(desc[t('mean')], color='#d32f2f', linestyle='--', linewidth=2.5, label=mean_label)
+                ax_hist.axvline(desc[t('median')], color='#388e3c', linestyle='--', linewidth=2.5, label=median_label)
+                
+                # Set title berdasarkan bahasa
+                if st.session_state.language == 'en':
+                    ax_hist.set_title(f'Distribution of {col}', fontsize=13, fontweight='bold', pad=15)
+                    ax_hist.set_xlabel(col, fontsize=11, fontweight='bold')
+                    ax_hist.set_ylabel('Frequency', fontsize=11, fontweight='bold')
+                else:
+                    ax_hist.set_title(f'Distribusi {col}', fontsize=13, fontweight='bold', pad=15)
+                    ax_hist.set_xlabel(col, fontsize=11, fontweight='bold')
+                    ax_hist.set_ylabel('Frekuensi', fontsize=11, fontweight='bold')
+                
+                ax_hist.legend(loc='upper right', framealpha=0.95, fontsize=10)
+                ax_hist.grid(True, alpha=0.3, linestyle='--')
+                ax_hist.spines['top'].set_visible(False)
+                ax_hist.spines['right'].set_visible(False)
+                
+                plt.tight_layout()
+                
+                img_buffer = BytesIO()
+                fig_hist.savefig(img_buffer, format='png', dpi=200, bbox_inches='tight')
+                img_buffer.seek(0)
+                plt.close(fig_hist)
+                
+                img = Image(img_buffer, width=6*inch, height=3*inch)
+                story.append(img)
+                story.append(Spacer(1, 0.15*inch))
+            except Exception as e:
+                error_msg = f"<i>Chart generation error: {str(e)}</i>" if st.session_state.language == 'en' else f"<i>Error pembuatan grafik: {str(e)}</i>"
+                story.append(Paragraph(error_msg, body_style))
+            
+            # Frequency Distribution (for Likert-type data)
+            if is_likert(series):
+                freq_label = f"Frequency Distribution for {col}:" if st.session_state.language == 'en' else f"Distribusi Frekuensi untuk {col}:"
+                story.append(Paragraph(freq_label, subheading_style))
+                freq = freq_table(series)
+                
+                freq_data = [[t('category'), t('frequency'), t('percentage')]]
+                for _, row in freq.iterrows():
+                    freq_data.append([
+                        str(row[t('category')]),
+                        str(row[t('frequency')]),
+                        f"{row[t('percentage')]:.1f}%"
+                    ])
+                
+                freq_table_pdf = Table(freq_data, colWidths=[2*inch, 2*inch, 2*inch])
+                freq_table_pdf.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#fff3e0')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#e65100')),
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                     ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                     ('GRID', (0, 0), (-1, -1), 1, colors.grey),
                     ('FONTSIZE', (0, 0), (-1, -1), 10),
-                    ('TOPPADDING', (0, 0), (-1, -1), 6),
-                    ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9f9f9')]),
+                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#fffbf5')]),
                 ]))
-                story.append(stats_table)
+                story.append(freq_table_pdf)
                 story.append(Spacer(1, 0.2*inch))
-                
-                # Histogram (judul tetap dalam bahasa asli untuk konsistensi)
-                try:
-                    fig_hist, ax_hist = plt.subplots(figsize=(7, 3.5))
-                    clean_data = series.dropna()
-                    
-                    n, bins, patches = ax_hist.hist(clean_data, bins=20, alpha=0.75, color='#1e88e5', edgecolor='white', linewidth=1.5)
-                    
-                    # Add mean and median lines
-                    ax_hist.axvline(desc[t('mean')], color='#d32f2f', linestyle='--', linewidth=2.5, 
-                                   label=f'{t("mean")}: {desc[t("mean")]:.2f}')
-                    ax_hist.axvline(desc[t('median')], color='#388e3c', linestyle='--', linewidth=2.5, 
-                                   label=f'{t("median")}: {desc[t("median")]:.2f}')
-                    
-                    ax_hist.set_title(f'Distribusi {col}', fontsize=13, fontweight='bold', pad=15)
-                    ax_hist.set_xlabel(col, fontsize=11, fontweight='bold')
-                    ax_hist.set_ylabel(t('frequency'), fontsize=11, fontweight='bold')
-                    ax_hist.legend(loc='upper right', framealpha=0.95, fontsize=10)
-                    ax_hist.grid(True, alpha=0.3, linestyle='--')
-                    ax_hist.spines['top'].set_visible(False)
-                    ax_hist.spines['right'].set_visible(False)
-                    
-                    plt.tight_layout()
-                    
-                    img_buffer = BytesIO()
-                    fig_hist.savefig(img_buffer, format='png', dpi=200, bbox_inches='tight')
-                    img_buffer.seek(0)
-                    plt.close(fig_hist)
-                    
-                    img = Image(img_buffer, width=6*inch, height=3*inch)
-                    story.append(img)
-                    story.append(Spacer(1, 0.15*inch))
-                except Exception as e:
-                    story.append(Paragraph(f"<i>Error pembuatan grafik: {str(e)}</i>", body_style))
-                
-                # Frequency Distribution (for Likert-type data)
-                if is_likert(series):
-                    story.append(Paragraph(f"{t('pdf_distribution')} {col}:", subheading_style))
-                    freq = freq_table(series)
-                    
-                    freq_data = [[t('category'), t('frequency'), t('percentage')]]
-                    for _, row in freq.iterrows():
-                        freq_data.append([
-                            str(row[t('category')]),
-                            str(row[t('frequency')]),
-                            f"{row[t('percentage')]:.1f}%"
-                        ])
-                    
-                    freq_table_pdf = Table(freq_data, colWidths=[2*inch, 2*inch, 2*inch])
-                    freq_table_pdf.setStyle(TableStyle([
-                        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#fff3e0')),
-                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#e65100')),
-                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                        ('GRID', (0, 0), (-1, -1), 1, colors.grey),
-                        ('FONTSIZE', (0, 0), (-1, -1), 10),
-                        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#fffbf5')]),
-                    ]))
-                    story.append(freq_table_pdf)
-                    story.append(Spacer(1, 0.2*inch))
-            
-            if idx < len(variables_to_analyze) - 1:
-                story.append(Spacer(1, 0.15*inch))
         
-        story.append(PageBreak())
-        
-        # =============== PAGE 3: NORMALITY TESTING ===============
-        story.append(Paragraph(t('pdf_normality_test'), heading_style))
-        story.append(Paragraph(t('pdf_normality_text'), body_style))
-        story.append(Spacer(1, 0.2*inch))
-        
+        if idx < len(variables_to_analyze) - 1:
+            story.append(Spacer(1, 0.15*inch))
+    
+    story.append(PageBreak())
+    
+    # =============== PAGE 3: NORMALITY TESTING ===============
+    story.append(Paragraph(t('pdf_normality_test'), heading_style))
+    story.append(Paragraph(t('pdf_normality_text'), body_style))
+    story.append(Spacer(1, 0.2*inch))
+    
+    # Tentukan teks interpretasi berdasarkan bahasa
+    if st.session_state.language == 'en':
         norm_data = [
             [t('variable'), 'p-value', t('distribution'), t('pdf_interpretation_col')],
             ['X_total', f'{x_norm:.4f}', 
              '✓ Normal' if x_norm > 0.05 else '✗ Non-Normal',
-             t('pdf_data_follows') if x_norm > 0.05 else t('pdf_data_not_follows')],
+             'Data follows normal distribution' if x_norm > 0.05 else 'Data does not follow normal distribution'],
             ['Y_total', f'{y_norm:.4f}',
              '✓ Normal' if y_norm > 0.05 else '✗ Non-Normal',
-             t('pdf_data_follows') if y_norm > 0.05 else t('pdf_data_not_follows')]
+             'Data follows normal distribution' if y_norm > 0.05 else 'Data does not follow normal distribution']
         ]
-        
-        norm_table = Table(norm_data, colWidths=[1.2*inch, 1*inch, 1.3*inch, 3*inch])
-        norm_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e8f5e9')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#2e7d32')),
-            ('ALIGN', (0, 0), (2, -1), 'CENTER'),
-            ('ALIGN', (3, 0), (3, -1), 'LEFT'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ('GRID', (0, 0), (-1, -1), 1, colors.grey),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('TOPPADDING', (0, 0), (-1, -1), 8),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9f9f9')]),
-        ]))
-        story.append(norm_table)
-        story.append(Spacer(1, 0.3*inch))
-        
-        # Method selection explanation - DITERJEMAHKAN
-        method_explanation = f"""<b>{t('pdf_selected_method')} {method}</b><br/><br/>
-        {t('pdf_method_text_1')} <b>{method}</b> {t('pdf_method_text_2')}
-        {'<br/>' + t('pdf_pearson_suitable') if method == t('pearson') else '<br/>' + t('pdf_spearman_suitable')}
-        """
-        story.append(Paragraph(method_explanation, body_style))
-        story.append(PageBreak())
-        
-        # =============== PAGE 4: CORRELATION ANALYSIS ===============
-        story.append(Paragraph(t('pdf_corr_analysis'), heading_style))
-        story.append(Paragraph(f"Analisis hubungan antara X_total dan Y_total menggunakan {method}.", body_style))
-        story.append(Spacer(1, 0.2*inch))
-        
-        # Correlation Results Table - DITERJEMAHKAN
+    else:
+        norm_data = [
+            [t('variable'), 'p-value', t('distribution'), t('pdf_interpretation_col')],
+            ['X_total', f'{x_norm:.4f}', 
+             '✓ Normal' if x_norm > 0.05 else '✗ Tidak Normal',
+             'Data mengikuti distribusi normal' if x_norm > 0.05 else 'Data tidak mengikuti distribusi normal'],
+            ['Y_total', f'{y_norm:.4f}',
+             '✓ Normal' if y_norm > 0.05 else '✗ Tidak Normal',
+             'Data mengikuti distribusi normal' if y_norm > 0.05 else 'Data tidak mengikuti distribusi normal']
+        ]
+    
+    norm_table = Table(norm_data, colWidths=[1.2*inch, 1*inch, 1.3*inch, 3*inch])
+    norm_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e8f5e9')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#2e7d32')),
+        ('ALIGN', (0, 0), (2, -1), 'CENTER'),
+        ('ALIGN', (3, 0), (3, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9f9f9')]),
+    ]))
+    story.append(norm_table)
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Method selection explanation - DITERJEMAHKAN
+    if st.session_state.language == 'en':
+        method_explanation = f"""<b>Selected Method: {method}</b><br/><br/>
+        Based on the normality test results, <b>{method}</b> was selected as the most appropriate correlation analysis method. 
+        {'Pearson correlation is suitable when both variables follow a normal distribution and the relationship is linear.' if method == t('pearson') else 'Spearman rank correlation is more robust for non-normal distributions, ordinal data, and is less sensitive to outliers.'}"""
+    else:
+        method_explanation = f"""<b>Metode Terpilih: {method}</b><br/><br/>
+        Berdasarkan hasil uji normalitas, <b>{method}</b> dipilih sebagai metode analisis korelasi yang paling tepat. 
+        {'Korelasi Pearson cocok ketika kedua variabel mengikuti distribusi normal dan hubungannya linear.' if method == t('pearson') else 'Korelasi peringkat Spearman lebih robust untuk distribusi non-normal, data ordinal, dan kurang sensitif terhadap outlier.'}"""
+    
+    story.append(Paragraph(method_explanation, body_style))
+    story.append(PageBreak())
+    
+    # =============== PAGE 4: CORRELATION ANALYSIS ===============
+    story.append(Paragraph(t('pdf_corr_analysis'), heading_style))
+    
+    if st.session_state.language == 'en':
+        corr_desc = f"Analysis of the relationship between X_total and Y_total using {method}."
+    else:
+        corr_desc = f"Analisis hubungan antara X_total dan Y_total menggunakan {method}."
+    
+    story.append(Paragraph(corr_desc, body_style))
+    story.append(Spacer(1, 0.2*inch))
+    
+    # Correlation Results Table - DITERJEMAHKAN
+    if st.session_state.language == 'en':
         corr_data = [
             [t('pdf_metric'), t('pdf_value'), t('pdf_interp')],
-            [t('method'), method, t('pdf_method_used')],
-            [t('coefficient'), f'{r:.4f}', f'{strength} {t("pdf_relationship")}'],
+            [t('method'), method, 'Statistical method used for correlation analysis'],
+            ['Correlation Coefficient (r)', f'{r:.4f}', f'{strength} {direction.lower()} relationship'],
             ['p-value', f'{p:.4f}', f'{"Statistically significant" if p < 0.05 else "Not statistically significant"} (α = 0.05)'],
-            [t('pdf_sample_size'), str(len(data)), t('pdf_num_obs')],
+            ['Sample Size (n)', str(len(data)), 'Number of observations included in analysis'],
+            [t('strength'), strength, 'Classified based on |r| value'],
+            [t('direction'), direction, 'Positive = both increase together; Negative = inverse relationship'],
+        ]
+    else:
+        corr_data = [
+            [t('pdf_metric'), t('pdf_value'), t('pdf_interp')],
+            [t('method'), method, 'Metode statistik yang digunakan untuk analisis korelasi'],
+            ['Koefisien Korelasi (r)', f'{r:.4f}', f'{strength} {direction.lower()} hubungan'],
+            ['Nilai-p', f'{p:.4f}', f'{"Signifikan secara statistik" if p < 0.05 else "Tidak signifikan secara statistik"} (α = 0,05)'],
+            ['Ukuran Sampel (n)', str(len(data)), 'Jumlah pengamatan yang termasuk dalam analisis'],
             [t('strength'), strength, 'Diklasifikasikan berdasarkan nilai |r|'],
             [t('direction'), direction, 'Positif = keduanya meningkat bersama; Negatif = hubungan terbalik'],
         ]
+    
+    corr_table = Table(corr_data, colWidths=[2*inch, 1.5*inch, 3*inch])
+    corr_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e3f2fd')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#0d47a1')),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('ALIGN', (0, 0), (1, -1), 'CENTER'),
+        ('ALIGN', (2, 0), (2, -1), 'LEFT'),
+        ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9f9f9')]),
+    ]))
+    story.append(corr_table)
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Scatter Plot dengan label bahasa sesuai
+    story.append(Paragraph(t('pdf_scatter_plot'), subheading_style))
+    story.append(Spacer(1, 0.1*inch))
+    
+    try:
+        fig_scatter, ax_scatter = plt.subplots(figsize=(7, 5))
         
-        corr_table = Table(corr_data, colWidths=[2*inch, 1.5*inch, 3*inch])
-        corr_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e3f2fd')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#0d47a1')),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('ALIGN', (0, 0), (1, -1), 'CENTER'),
-            ('ALIGN', (2, 0), (2, -1), 'LEFT'),
-            ('GRID', (0, 0), (-1, -1), 1, colors.grey),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('TOPPADDING', (0, 0), (-1, -1), 8),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9f9f9')]),
-        ]))
-        story.append(corr_table)
-        story.append(Spacer(1, 0.3*inch))
+        # Scatter plot
+        scatter = ax_scatter.scatter(data["X_total"], data["Y_total"], 
+                                    alpha=0.6, s=80, c=data["Y_total"], 
+                                    cmap='viridis', edgecolors='white', linewidth=1)
         
-        # Scatter Plot with Regression Line
-        story.append(Paragraph(t('pdf_scatter_plot'), subheading_style))
-        story.append(Spacer(1, 0.1*inch))
+        # Add regression line
+        z = np.polyfit(data["X_total"].dropna(), data["Y_total"].dropna(), 1)
+        p_fit = np.poly1d(z)
+        x_line = np.linspace(data["X_total"].min(), data["X_total"].max(), 100)
         
-        try:
-            fig_scatter, ax_scatter = plt.subplots(figsize=(7, 5))
-            
-            # Scatter plot
-            scatter = ax_scatter.scatter(data["X_total"], data["Y_total"], 
-                                        alpha=0.6, s=80, c=data["Y_total"], 
-                                        cmap='viridis', edgecolors='white', linewidth=1)
-            
-            # Add regression line
-            z = np.polyfit(data["X_total"].dropna(), data["Y_total"].dropna(), 1)
-            p_fit = np.poly1d(z)
-            x_line = np.linspace(data["X_total"].min(), data["X_total"].max(), 100)
-            ax_scatter.plot(x_line, p_fit(x_line), "r--", linewidth=3, alpha=0.8, 
-                           label=f'{t("pdf_trend_line")}: y = {z[0]:.3f}x + {z[1]:.3f}')
-            
+        # Label trend line berdasarkan bahasa
+        if st.session_state.language == 'en':
+            trend_label = f'Trend Line: y = {z[0]:.3f}x + {z[1]:.3f}'
+        else:
+            trend_label = f'Garis Tren: y = {z[0]:.3f}x + {z[1]:.3f}'
+        
+        ax_scatter.plot(x_line, p_fit(x_line), "r--", linewidth=3, alpha=0.8, label=trend_label)
+        
+        # Set labels berdasarkan bahasa
+        if st.session_state.language == 'en':
+            ax_scatter.set_xlabel("X_total (Independent Variable)", fontsize=12, fontweight='bold')
+            ax_scatter.set_ylabel("Y_total (Dependent Variable)", fontsize=12, fontweight='bold')
+            title_text = f'{method} Correlation Analysis\nr = {r:.4f}, p = {p:.4f}, n = {len(data)}'
+            cbar_label = 'Y_total Value'
+        else:
             ax_scatter.set_xlabel("X_total (Variabel Independen)", fontsize=12, fontweight='bold')
             ax_scatter.set_ylabel("Y_total (Variabel Dependen)", fontsize=12, fontweight='bold')
-            
-            # Title in current language
-            title_text = f'{method} {t("association")}\nr = {r:.4f}, p = {p:.4f}, n = {len(data)}' if st.session_state.language == 'en' \
-                        else f'{method} {t("association")}\nr = {r:.4f}, p = {p:.4f}, n = {len(data)}'
-            ax_scatter.set_title(title_text, fontsize=13, fontweight='bold', pad=15)
-            
-            ax_scatter.legend(fontsize=10, loc='best', framealpha=0.95)
-            ax_scatter.grid(True, alpha=0.3, linestyle='--')
-            ax_scatter.spines['top'].set_visible(False)
-            ax_scatter.spines['right'].set_visible(False)
-            
-            # Add colorbar
-            cbar = plt.colorbar(scatter, ax=ax_scatter)
-            cbar.set_label('Nilai Y_total', fontsize=10, fontweight='bold')
-            
-            plt.tight_layout()
-            
-            scatter_buffer = BytesIO()
-            fig_scatter.savefig(scatter_buffer, format='png', dpi=200, bbox_inches='tight')
-            scatter_buffer.seek(0)
-            plt.close(fig_scatter)
-            
-            img_scatter = Image(scatter_buffer, width=6*inch, height=4.3*inch)
-            story.append(img_scatter)
-        except Exception as e:
-            story.append(Paragraph(f"<i>Error diagram sebar: {str(e)}</i>", body_style))
+            title_text = f'Analisis Korelasi {method}\nr = {r:.4f}, p = {p:.4f}, n = {len(data)}'
+            cbar_label = 'Nilai Y_total'
         
-        story.append(PageBreak())
+        ax_scatter.set_title(title_text, fontsize=13, fontweight='bold', pad=15)
+        ax_scatter.legend(fontsize=10, loc='best', framealpha=0.95)
+        ax_scatter.grid(True, alpha=0.3, linestyle='--')
+        ax_scatter.spines['top'].set_visible(False)
+        ax_scatter.spines['right'].set_visible(False)
         
-        # =============== PAGE 5: INTERPRETATION & FINDINGS ===============
-        story.append(Paragraph(t('pdf_interpretation'), heading_style))
-        story.append(Paragraph("Interpretasi terperinci dari temuan analisis korelasi:", body_style))
-        story.append(Spacer(1, 0.2*inch))
+        # Add colorbar
+        cbar = plt.colorbar(scatter, ax=ax_scatter)
+        cbar.set_label(cbar_label, fontsize=10, fontweight='bold')
         
-        # Strength interpretation - DITERJEMAHKAN
-        story.append(Paragraph(t('pdf_strength_rel'), subheading_style))
-        strength_interp = f"""{t('pdf_strength_text_1')} <b>r = {r:.4f}</b> {t('pdf_strength_text_2')} <b>{strength.lower()}</b> {t('pdf_strength_text_3')} 
-        {'<b>' + t('pdf_substantial') + '</b>' if abs(r) > 0.5 else '<b>' + t('pdf_moderate') + '</b>'} {t('pdf_between_vars')}"""
-        story.append(Paragraph(strength_interp, body_style))
-        story.append(Spacer(1, 0.15*inch))
+        plt.tight_layout()
         
-        # Direction interpretation - DITERJEMAHKAN
-        story.append(Paragraph(t('pdf_direction_rel'), subheading_style))
-        direction_interp = f"""{t('pdf_direction_text_1')} <b>{direction.lower()}</b> {t('pdf_direction_text_2')} 
-        <b>{t('pdf_increase') if r > 0 else t('pdf_decrease')}</b>. {t('pdf_direction_text_3')} 
-        <b>{t('pdf_direct') if r > 0 else t('pdf_inverse')}</b> {t('pdf_direction_text_4')} {'<b>' + t('pdf_same_direction') + '</b>' if r > 0 else '<b>' + t('pdf_opposite_direction') + '</b>'}"""
-        story.append(Paragraph(direction_interp, body_style))
-        story.append(Spacer(1, 0.15*inch))
+        scatter_buffer = BytesIO()
+        fig_scatter.savefig(scatter_buffer, format='png', dpi=200, bbox_inches='tight')
+        scatter_buffer.seek(0)
+        plt.close(fig_scatter)
         
-        # Statistical significance - DITERJEMAHKAN
-        story.append(Paragraph(t('pdf_stat_sig'), subheading_style))
-        sig_interp = f"""{t('pdf_sig_text_1')} <b>{p:.4f}</b>, {t('pdf_sig_text_2')} 
-        <b>{t('pdf_statistically_sig') if p < 0.05 else t('pdf_not_statistically_sig')}</b>. {t('pdf_sig_text_3')} 
-        {'<b>' + t('pdf_reject_null') + '</b>' if p < 0.05 else '<b>' + t('pdf_cannot_reject') + '</b>'}"""
-        story.append(Paragraph(sig_interp, body_style))
-        story.append(Spacer(1, 0.15*inch))
-        
-        # Important note - DITERJEMAHKAN
-        story.append(Paragraph(t('pdf_important_note'), subheading_style))
-        note_text = f"""<b>{t('causation_note')}</b> {t('pdf_causation')} 
-        {'<b>' + t('pdf_sig_association') + '</b>' if p < 0.05 else '<b>' + t('pdf_an_association') + '</b>'} 
-        {t('pdf_causation_text')}"""
-        story.append(Paragraph(note_text, body_style))
-        story.append(PageBreak())
-        
-        # =============== PAGE 6: CONCLUSION & RECOMMENDATIONS ===============
-        story.append(Paragraph(t('pdf_conclusion'), heading_style))
-        story.append(Spacer(1, 0.2*inch))
-        
-        story.append(Paragraph(t('pdf_summary'), subheading_style))
-        
-        findings_list = f"""
-        <b>1. {t('pdf_desc_analysis_sum')}</b> {t('pdf_desc_text')} {len(variables_to_analyze)} {t('pdf_desc_text_2')}<br/><br/>
-        
-        <b>2. {t('pdf_composite')}</b> {t('pdf_composite_text')}<br/><br/>
-        
-        <b>3. {t('pdf_normality_test')}</b> {'Kedua variabel mengikuti distribusi normal, mendukung penggunaan metode parametrik' if x_norm > 0.05 and y_norm > 0.05 else 'Setidaknya satu variabel menyimpang dari normalitas, memerlukan penggunaan metode non-parametrik'}.<br/><br/>
-        
-        <b>4. {t('pdf_corr_analysis_sum')}</b> {t('pdf_corr_text_1')} <b>{strength.lower()} {direction.lower()}</b> (r = {r:.4f}) 
-        {t('pdf_corr_text_2')} <b>{'signifikan secara statistik' if p < 0.05 else 'tidak signifikan secara statistik'}</b> {t('pdf_corr_text_3')}<br/><br/>
-        
-        <b>5. {t('pdf_method_rigor')}</b> {t('pdf_method_text')} ({method}) {t('pdf_method_text_2')}
-        """
-        story.append(Paragraph(findings_list, body_style))
-        story.append(Spacer(1, 0.3*inch))
-        
-        # Recommendations - DITERJEMAHKAN
-        story.append(Paragraph(t('pdf_recommendations'), subheading_style))
-        recommendations = f"""
-        <b>1.</b> {t('pdf_rec_1')}<br/><br/>
-        
-        <b>2.</b> {t('pdf_rec_2')}<br/><br/>
-        
-        <b>3.</b> {t('pdf_rec_3')}<br/><br/>
-        
-        <b>4.</b> {t('pdf_rec_4')}
-        """
-        story.append(Paragraph(recommendations, body_style))
-        story.append(Spacer(1, 0.4*inch))
-        
-        # Academic Reporting Note - DITERJEMAHKAN
-        story.append(Paragraph(t('pdf_academic'), subheading_style))
-        story.append(Paragraph(t('pdf_academic_text'), body_style))
-        
-        # Footer - DITERJEMAHKAN
-        story.append(Spacer(1, 0.6*inch))
-        footer_text = f"""<i>{t('pdf_footer')} {datetime.now().strftime('%d %B %Y pukul %H:%M:%S')}<br/>
-        Laporan ini berisi {len([s for s in story if isinstance(s, PageBreak)])+1} halaman analisis statistik komprehensif.</i>"""
-        story.append(Paragraph(footer_text, ParagraphStyle('Footer', parent=body_style, fontSize=9, alignment=TA_CENTER, textColor=colors.grey, leading=12)))
-        
-        # Build PDF
-        doc.build(story)
-        pdf_buffer.seek(0)
-        
-        st.download_button(
-            label=f"📥 {t('pdf_download_btn')}",
-            data=pdf_buffer,
-            file_name=f"analisis_statistik_{'indonesia' if st.session_state.language == 'id' else 'english'}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
-            mime="application/pdf",
-            type="primary",
-            use_container_width=True
-        )
-        
-        st.success(f"✅ {t('pdf_success')}")
-        st.info(f"📊 {t('pdf_includes')}")
-        
-    except ImportError:
-        st.error("❌ ReportLab library not found. Install with: pip install reportlab")
+        img_scatter = Image(scatter_buffer, width=6*inch, height=4.3*inch)
+        story.append(img_scatter)
     except Exception as e:
-        st.error(f"❌ Error generating PDF: {str(e)}")
-        import traceback
-        st.code(traceback.format_exc())
+        error_msg = f"<i>Scatter plot error: {str(e)}</i>" if st.session_state.language == 'en' else f"<i>Error diagram sebar: {str(e)}</i>"
+        story.append(Paragraph(error_msg, body_style))
     
-    st.markdown("</div>", unsafe_allow_html=True)
+    story.append(PageBreak())
+    
+    # =============== PAGE 5: INTERPRETATION & FINDINGS ===============
+    story.append(Paragraph(t('pdf_interpretation'), heading_style))
+    
+    if st.session_state.language == 'en':
+        interp_desc = "Detailed interpretation of the correlation analysis findings:"
+    else:
+        interp_desc = "Interpretasi terperinci dari temuan analisis korelasi:"
+    
+    story.append(Paragraph(interp_desc, body_style))
+    story.append(Spacer(1, 0.2*inch))
+    
+    # Strength interpretation - DITERJEMAHKAN
+    story.append(Paragraph(t('pdf_strength_rel'), subheading_style))
+    
+    if st.session_state.language == 'en':
+        substantial_text = "substantial" if abs(r) > 0.5 else "moderate to weak"
+        strength_interp = f"""The correlation coefficient of <b>r = {r:.4f}</b> indicates a <b>{strength.lower()}</b> relationship between X and Y variables. 
+        This suggests that there is {substantial_text} association between the variables. In practical terms, 
+        {'this strong correlation indicates that changes in X are consistently associated with changes in Y.' if abs(r) > 0.5 else 'while a relationship exists, other factors may also influence the outcome.'}"""
+    else:
+        substantial_text = "substansial" if abs(r) > 0.5 else "moderat hingga lemah"
+        strength_interp = f"""Koefisien korelasi <b>r = {r:.4f}</b> menunjukkan hubungan <b>{strength.lower()}</b> antara variabel X dan Y. 
+        Ini menunjukkan bahwa terdapat asosiasi {substantial_text} antara variabel. Dalam istilah praktis, 
+        {'korelasi kuat ini menunjukkan bahwa perubahan pada X secara konsisten dikaitkan dengan perubahan pada Y.' if abs(r) > 0.5 else 'meskipun hubungan ada, faktor lain juga dapat mempengaruhi hasil.'}"""
+    
+    story.append(Paragraph(strength_interp, body_style))
+    story.append(Spacer(1, 0.15*inch))
+    
+    # Direction interpretation - DITERJEMAHKAN
+    story.append(Paragraph(t('pdf_direction_rel'), subheading_style))
+    
+    if st.session_state.language == 'en':
+        direction_text = "increase as well" if r > 0 else "decrease"
+        movement = "same direction" if r > 0 else "opposite directions"
+        dir_interp = f"""The <b>{direction.lower()}</b> correlation coefficient indicates that as X increases, Y tends to <b>{direction_text}</b>. 
+        This {'direct' if r > 0 else 'inverse'} relationship suggests that both variables move in {movement}. 
+        {'Higher values of X are associated with higher values of Y.' if r > 0 else 'Higher values of X are associated with lower values of Y.'}"""
+    else:
+        direction_text = "meningkat juga" if r > 0 else "menurun"
+        movement = "arah yang sama" if r > 0 else "arah berlawanan"
+        dir_interp = f"""Koefisien korelasi <b>{direction.lower()}</b> menunjukkan bahwa ketika X meningkat, Y cenderung <b>{direction_text}</b>. 
+        Hubungan {'langsung' if r > 0 else 'terbalik'} ini menunjukkan bahwa kedua variabel bergerak dalam {movement}. 
+        {'Nilai X yang lebih tinggi dikaitkan dengan nilai Y yang lebih tinggi.' if r > 0 else 'Nilai X yang lebih tinggi dikaitkan dengan nilai Y yang lebih rendah.'}"""
+    
+    story.append(Paragraph(dir_interp, body_style))
+    story.append(Spacer(1, 0.15*inch))
+    
+    # Statistical significance - DITERJEMAHKAN
+    story.append(Paragraph(t('pdf_stat_sig'), subheading_style))
+    
+    if st.session_state.language == 'en':
+        sig_interp = f"""With a p-value of <b>{p:.4f}</b>, the relationship is <b>{'statistically significant' if p < 0.05 else 'not statistically significant'}</b> at the α = 0.05 level. 
+        This means {'we can reject the null hypothesis and conclude that the observed correlation is unlikely to have occurred by random chance alone. The relationship observed in the sample is likely to exist in the population.' if p < 0.05 else 'we cannot reject the null hypothesis. The observed correlation may be due to random variation in the sample, and we cannot confidently conclude that a relationship exists in the population.'}"""
+    else:
+        sig_interp = f"""Dengan nilai-p <b>{p:.4f}</b>, hubungan ini <b>{'signifikan secara statistik' if p < 0.05 else 'tidak signifikan secara statistik'}</b> pada tingkat α = 0,05. 
+        Ini berarti {'kita dapat menolak hipotesis nol dan menyimpulkan bahwa korelasi yang diamati tidak mungkin terjadi karena kebetulan acak saja. Hubungan yang diamati dalam sampel kemungkinan ada dalam populasi.' if p < 0.05 else 'kita tidak dapat menolak hipotesis nol. Korelasi yang diamati mungkin disebabkan oleh variasi acak dalam sampel, dan kita tidak dapat dengan yakin menyimpulkan bahwa hubungan ada dalam populasi.'}"""
+    
+    story.append(Paragraph(sig_interp, body_style))
+    story.append(Spacer(1, 0.15*inch))
+    
+    # Important note - DITERJEMAHKAN
+    story.append(Paragraph(t('pdf_important_note'), subheading_style))
+    
+    if st.session_state.language == 'en':
+        note_text = f"""<b>Correlation does not imply causation.</b> While we observe {'a statistically significant association' if p < 0.05 else 'an association'} between the variables, 
+        this analysis alone cannot determine if one variable causes changes in the other. Additional research, including experimental designs or longitudinal studies, 
+        would be needed to establish causal relationships. Other confounding variables may also influence the observed relationship."""
+    else:
+        note_text = f"""<b>Korelasi tidak menyiratkan kausalitas.</b> Meskipun kita mengamati {'asosiasi yang signifikan secara statistik' if p < 0.05 else 'sebuah asosiasi'} antara variabel, 
+        analisis ini saja tidak dapat menentukan apakah satu variabel menyebabkan perubahan pada variabel lainnya. Penelitian tambahan, termasuk desain eksperimental atau studi longitudinal, 
+        akan diperlukan untuk membangun hubungan kausal. Variabel perancu lain juga dapat mempengaruhi hubungan yang diamati."""
+    
+    story.append(Paragraph(note_text, body_style))
+    story.append(PageBreak())
+    
+    # =============== PAGE 6: CONCLUSION & RECOMMENDATIONS ===============
+    story.append(Paragraph(t('pdf_conclusion'), heading_style))
+    story.append(Spacer(1, 0.2*inch))
+    
+    story.append(Paragraph(t('pdf_summary'), subheading_style))
+    
+    if st.session_state.language == 'en':
+        findings_list = f"""
+        <b>1. Descriptive Analysis:</b> Successfully analyzed {len(variables_to_analyze)} variables, revealing meaningful patterns 
+        in the data distribution. Central tendency measures and dispersion statistics provide a comprehensive understanding of each variable.<br/><br/>
+        
+        <b>2. Composite Scores:</b> Created reliable aggregate measures (X_total and Y_total) that improve measurement reliability 
+        by reducing random error and providing more stable estimates of the underlying constructs.<br/><br/>
+        
+        <b>3. Normality Assessment:</b> Shapiro-Wilk tests determined that {'both variables follow normal distributions, supporting the use of parametric methods' if x_norm > 0.05 and y_norm > 0.05 else 'at least one variable deviates from normality, necessitating the use of non-parametric methods'}.<br/><br/>
+        
+        <b>4. Correlation Analysis:</b> Found a <b>{strength.lower()} {direction.lower()}</b> relationship (r = {r:.4f}) 
+        that is <b>{'statistically significant' if p < 0.05 else 'not statistically significant'}</b> at the 0.05 level (p = {p:.4f}).<br/><br/>
+        
+        <b>5. Methodological Rigor:</b> Applied appropriate statistical methods ({method}) based on data distribution characteristics, 
+        ensuring valid and reliable results that meet academic standards.
+        """
+    else:
+        findings_list = f"""
+        <b>1. Analisis Deskriptif:</b> Berhasil menganalisis {len(variables_to_analyze)} variabel, mengungkapkan pola bermakna 
+        dalam distribusi data. Ukuran tendensi sentral dan statistik dispersi memberikan pemahaman komprehensif tentang setiap variabel.<br/><br/>
+        
+        <b>2. Skor Komposit:</b> Membuat ukuran agregat yang andal (X_total dan Y_total) yang meningkatkan reliabilitas pengukuran 
+        dengan mengurangi kesalahan acak dan memberikan estimasi yang lebih stabil dari konstruk yang mendasarinya.<br/><br/>
+        
+        <b>3. Penilaian Normalitas:</b> Uji Shapiro-Wilk menentukan bahwa {'kedua variabel mengikuti distribusi normal, mendukung penggunaan metode parametrik' if x_norm > 0.05 and y_norm > 0.05 else 'setidaknya satu variabel menyimpang dari normalitas, memerlukan penggunaan metode non-parametrik'}.<br/><br/>
+        
+        <b>4. Analisis Korelasi:</b> Menemukan hubungan <b>{strength.lower()} {direction.lower()}</b> (r = {r:.4f}) 
+        yang <b>{'signifikan secara statistik' if p < 0.05 else 'tidak signifikan secara statistik'}</b> pada tingkat 0,05 (p = {p:.4f}).<br/><br/>
+        
+        <b>5. Ketelitian Metodologis:</b> Menerapkan metode statistik yang sesuai ({method}) berdasarkan karakteristik distribusi data, 
+        memastikan hasil yang valid dan andal yang memenuhi standar akademik.
+        """
+    
+    story.append(Paragraph(findings_list, body_style))
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Recommendations - DITERJEMAHKAN
+    story.append(Paragraph(t('pdf_recommendations'), subheading_style))
+    
+    if st.session_state.language == 'en':
+        recommendations = """
+        <b>1. Extended Analysis:</b> Consider conducting additional analyses to explore potential confounding variables, 
+        mediating factors, or moderating effects that might influence the observed relationship.<br/><br/>
+        
+        <b>2. Subgroup Analysis:</b> Examine whether the relationship differs across demographic subgroups or other relevant 
+        categories to identify potential variation in effects.<br/><br/>
+        
+        <b>3. Replication Studies:</b> Replicate findings with independent samples from different populations to validate 
+        the generalizability and robustness of the results.<br/><br/>
+        
+        <b>4. Qualitative Integration:</b> Consider incorporating qualitative methods (interviews, focus groups) to better 
+        understand the mechanisms and processes underlying the observed statistical relationships.<br/><br/>
+        
+        <b>5. Longitudinal Investigation:</b> If feasible, conduct longitudinal studies to examine changes over time and 
+        potentially establish temporal precedence, which is necessary for causal inference.
+        """
+    else:
+        recommendations = """
+        <b>1. Analisis Lanjutan:</b> Pertimbangkan untuk melakukan analisis tambahan untuk mengeksplorasi variabel perancu potensial, 
+        faktor mediasi, atau efek moderasi yang mungkin mempengaruhi hubungan yang diamati.<br/><br/>
+        
+        <b>2. Analisis Subkelompok:</b> Periksa apakah hubungan berbeda di berbagai subkelompok demografis atau kategori relevan lainnya 
+        untuk mengidentifikasi variasi potensial dalam efek.<br/><br/>
+        
+        <b>3. Studi Replikasi:</b> Replikasi temuan dengan sampel independen dari populasi yang berbeda untuk memvalidasi 
+        generalisasi dan ketahanan hasil.<br/><br/>
+        
+        <b>4. Integrasi Kualitatif:</b> Pertimbangkan untuk menggabungkan metode kualitatif (wawancara, kelompok fokus) untuk lebih 
+        memahami mekanisme dan proses yang mendasari hubungan statistik yang diamati.<br/><br/>
+        
+        <b>5. Investigasi Longitudinal:</b> Jika memungkinkan, lakukan studi longitudinal untuk memeriksa perubahan dari waktu ke waktu dan 
+        berpotensi membangun presedensi temporal, yang diperlukan untuk inferensi kausal.
+        """
+    
+    story.append(Paragraph(recommendations, body_style))
+    story.append(Spacer(1, 0.4*inch))
+    
+    # Academic Reporting Note - DITERJEMAHKAN
+    story.append(Paragraph(t('pdf_academic'), subheading_style))
+    
+    if st.session_state.language == 'en':
+        academic_text = """These results are suitable for inclusion in academic papers, theses, and research reports. 
+        When reporting, ensure proper citation of statistical methods, acknowledgment of limitations (particularly regarding 
+        causality), and transparent reporting of all relevant statistical parameters including effect sizes, confidence intervals, 
+        and sample characteristics."""
+    else:
+        academic_text = """Hasil ini cocok untuk dimasukkan dalam makalah akademik, tesis, dan laporan penelitian. 
+        Saat melaporkan, pastikan kutipan yang tepat dari metode statistik, pengakuan keterbatasan (terutama mengenai 
+        kausalitas), dan pelaporan transparan dari semua parameter statistik yang relevan termasuk ukuran efek, interval kepercayaan, 
+        dan karakteristik sampel."""
+    
+    story.append(Paragraph(academic_text, body_style))
+    
+    # Footer - DITERJEMAHKAN
+    story.append(Spacer(1, 0.6*inch))
+    
+    if st.session_state.language == 'en':
+        footer_text = f"""<i>Report generated by Data Analytics Platform | © 2024 Group 3 Project<br/>
+        Generated on {datetime.now().strftime('%B %d, %Y at %H:%M:%S')}<br/>
+        This report contains {len([s for s in story if isinstance(s, PageBreak)])+1} pages of comprehensive statistical analysis.</i>"""
+    else:
+        footer_text = f"""<i>Laporan dibuat oleh Data Analytics Platform | © 2024 Proyek Kelompok 3<br/>
+        Dibuat pada {datetime.now().strftime('%d %B %Y pukul %H:%M:%S')}<br/>
+        Laporan ini berisi {len([s for s in story if isinstance(s, PageBreak)])+1} halaman analisis statistik komprehensif.</i>"""
+    
+    story.append(Paragraph(footer_text, ParagraphStyle('Footer', parent=body_style, fontSize=9, alignment=TA_CENTER, textColor=colors.grey, leading=12)))
+    
+    # Build PDF
+    doc.build(story)
+    pdf_buffer.seek(0)
+    
+    # Nama file berdasarkan bahasa
+    if st.session_state.language == 'en':
+        file_prefix = "statistical_analysis_report"
+        success_msg = "✅ PDF report generated successfully!"
+        info_msg = f"📊 This comprehensive report includes {len([s for s in story if isinstance(s, PageBreak)])+1} pages with: Executive Summary, Complete Descriptive Statistics for ALL variables, Normality Tests, Correlation Analysis with visualizations, Detailed Interpretations, and Research Recommendations."
+    else:
+        file_prefix = "laporan_analisis_statistik"
+        success_msg = "✅ Laporan PDF berhasil dibuat!"
+        info_msg = f"📊 Laporan komprehensif ini berisi {len([s for s in story if isinstance(s, PageBreak)])+1} halaman dengan: Ringkasan Eksekutif, Statistik Deskriptif Lengkap untuk SEMUA variabel, Uji Normalitas, Analisis Korelasi dengan visualisasi, Interpretasi Terperinci, dan Rekomendasi Penelitian."
+    
+    st.download_button(
+        label=f"📥 {t('pdf_download_btn')}",
+        data=pdf_buffer,
+        file_name=f"{file_prefix}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+        mime="application/pdf",
+        type="primary",
+        use_container_width=True
+    )
+    
+    st.success(success_msg)
+    st.info(info_msg)
+    
+except ImportError:
+    st.error("❌ ReportLab library not found. Install with: pip install reportlab")
+except Exception as e:
+    error_msg = f"❌ Error generating PDF: {str(e)}" if st.session_state.language == 'en' else f"❌ Error membuat PDF: {str(e)}"
+    st.error(error_msg)
+    import traceback
+    st.code(traceback.format_exc())
+
+st.markdown("</div>", unsafe_allow_html=True)
