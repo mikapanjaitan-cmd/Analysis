@@ -10,18 +10,15 @@ import random
 import warnings
 warnings.filterwarnings("ignore")
 
-# Page Configuration
 st.set_page_config(
     page_title="Data Analytics Platform",
     page_icon="📊",
     layout="wide"
 )
 
-# Initialize language in session state
 if 'language' not in st.session_state:
     st.session_state.language = 'en'
 
-# Language translations
 translations = {
     'en': {
         'title': 'Data Analytics Platform',
@@ -148,24 +145,18 @@ translations = {
         'sensitivity': 'Sensitivity:',
         'advantage': 'Advantage:',
         'perfect_for': 'Perfect for:',
-        
-        # Pearson descriptions
         'pearson_purpose': 'Measures linear relationships between continuous variables',
         'pearson_req': 'Assumes normal distribution, interval/ratio data, linear relationship',
         'pearson_when': 'When both variables are normally distributed and relationship is linear',
         'pearson_formula': 'r = Σ[(xi - x̄)(yi - ȳ)] / √[Σ(xi - x̄)²Σ(yi - ȳ)²]',
         'pearson_range': '-1 to +1 (perfect negative to perfect positive correlation)',
         'pearson_sensitivity': 'Highly sensitive to outliers and extreme values',
-        
-        # Spearman descriptions
         'spearman_purpose': 'Measures monotonic relationships (not necessarily linear)',
         'spearman_req': 'Works with ordinal, interval, or ratio data; non-parametric',
         'spearman_when': 'When data is not normally distributed, contains outliers, or involves ordinal data (like Likert scales 1-5)',
         'spearman_method': 'Uses rank-based calculation instead of raw values',
         'spearman_advantage': 'More robust to outliers and non-normal distributions',
         'spearman_perfect': 'Survey data with Likert scales, ranked preferences, ordinal measurements',
-        
-        # Table
         'key_diff': 'Key Differences: Pearson vs Spearman',
         'aspect': 'Aspect',
         'data_type': 'Data Type',
@@ -175,8 +166,6 @@ translations = {
         'likert_scales': 'Likert Scales (1-5)',
         'calculation': 'Calculation',
         'best_app': 'Best Application',
-        
-        # Table values
         'continuous': 'Continuous (interval/ratio)',
         'ordinal_continuous': 'Ordinal or continuous',
         'linear_only': 'Linear only',
@@ -191,8 +180,6 @@ translations = {
         'uses_ranked': 'Uses ranked data',
         'experimental': 'Experimental data, measurements',
         'survey_research': 'Survey research, questionnaires',
-        
-        # When to use
         'when_use_which': 'When to Use Which Method?',
         'use_pearson_when': 'Use Pearson when:',
         'use_spearman_when': 'Use Spearman when:',
@@ -204,7 +191,6 @@ translations = {
         'non_normal': 'Non-normal distribution',
         'presence_outliers': 'Presence of outliers',
         'monotonic_not_linear': 'Monotonic but not linear',
-
         'pdf_title': 'STATISTICAL ANALYSIS REPORT',
         'pdf_report_info': 'Report Information',
         'pdf_generated': 'Generated',
@@ -428,24 +414,18 @@ translations = {
         'sensitivity': 'Sensitivitas:',
         'advantage': 'Keunggulan:',
         'perfect_for': 'Sempurna untuk:',
-        
-        # Pearson descriptions
         'pearson_purpose': 'Mengukur hubungan linear antara variabel kontinu',
         'pearson_req': 'Mengasumsikan distribusi normal, data interval/rasio, hubungan linear',
         'pearson_when': 'Ketika kedua variabel berdistribusi normal dan hubungannya linear',
         'pearson_formula': 'r = Σ[(xi - x̄)(yi - ȳ)] / √[Σ(xi - x̄)²Σ(yi - ȳ)²]',
         'pearson_range': '-1 hingga +1 (korelasi negatif sempurna ke positif sempurna)',
         'pearson_sensitivity': 'Sangat sensitif terhadap outlier dan nilai ekstrem',
-        
-        # Spearman descriptions
         'spearman_purpose': 'Mengukur hubungan monotonik (tidak harus linear)',
         'spearman_req': 'Bekerja dengan data ordinal, interval, atau rasio; non-parametrik',
         'spearman_when': 'Ketika data tidak berdistribusi normal, mengandung outlier, atau melibatkan data ordinal (seperti skala Likert 1-5)',
         'spearman_method': 'Menggunakan perhitungan berbasis peringkat bukan nilai mentah',
         'spearman_advantage': 'Lebih robust terhadap outlier dan distribusi non-normal',
         'spearman_perfect': 'Data survei dengan skala Likert, preferensi peringkat, pengukuran ordinal',
-        
-        # Table
         'key_diff': 'Perbedaan Utama: Pearson vs Spearman',
         'aspect': 'Aspek',
         'data_type': 'Tipe Data',
@@ -455,8 +435,6 @@ translations = {
         'likert_scales': 'Skala Likert (1-5)',
         'calculation': 'Perhitungan',
         'best_app': 'Aplikasi Terbaik',
-        
-        # Table values
         'continuous': 'Kontinu (interval/rasio)',
         'ordinal_continuous': 'Ordinal atau kontinu',
         'linear_only': 'Hanya linear',
@@ -471,8 +449,6 @@ translations = {
         'uses_ranked': 'Menggunakan data peringkat',
         'experimental': 'Data eksperimental, pengukuran',
         'survey_research': 'Riset survei, kuesioner',
-        
-        # When to use
         'when_use_which': 'Kapan Menggunakan Metode Mana?',
         'use_pearson_when': 'Gunakan Pearson ketika:',
         'use_spearman_when': 'Gunakan Spearman ketika:',
@@ -484,8 +460,6 @@ translations = {
         'non_normal': 'Distribusi non-normal',
         'presence_outliers': 'Terdapat outlier',
         'monotonic_not_linear': 'Monotonik tapi tidak linear',
-
-           # PDF Report translations (Indonesian)
         'pdf_title': 'LAPORAN ANALISIS STATISTIK',
         'pdf_report_info': 'Informasi Laporan',
         'pdf_generated': 'Dibuat',
@@ -590,7 +564,6 @@ def t(key):
     """Get translation for current language"""
     return translations[st.session_state.language].get(key, key)
 
-# Custom CSS for styling
 st.markdown("""
 <style>
     .stTabs [data-baseweb="tab-list"] {
@@ -648,7 +621,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Language selector in sidebar
 with st.sidebar:
     st.markdown("### 🌐 Language / Bahasa")
     language = st.radio("", ["English", "Bahasa Indonesia"], index=0 if st.session_state.language == 'en' else 1, label_visibility="collapsed")
@@ -657,7 +629,6 @@ with st.sidebar:
     else:
         st.session_state.language = 'id'
 
-# Helper Functions
 def descriptive_numeric(series):
     series = series.dropna()
     return {
@@ -691,10 +662,8 @@ def is_likert(series):
     vals = series.dropna().unique()
     return all(v in [1,2,3,4,5] for v in vals)
 
-# Create tabs
 tab1, tab2, tab3 = st.tabs([f"🏠  {t('title').upper()[:4]}", "📘  INTRODUCTION", "📊  ANALYSIS"])
 
-# ==================== TAB 1: HOME PAGE ====================
 with tab1:
     st.markdown("""
     <style>
@@ -781,7 +750,6 @@ with tab1:
     </div>
     """, unsafe_allow_html=True)
 
-# ==================== TAB 2: INTRODUCTION ====================
 with tab2:
     st.markdown("""
     <style>
@@ -894,28 +862,22 @@ with tab2:
     
     st.markdown('<div style="height: 3px; background: linear-gradient(90deg, #FFD700, #FFA500, #FFD700); margin: 3rem 0; border-radius: 3px;"></div>', unsafe_allow_html=True)
     
-# About the Analysis - COMPLETELY FIXED VERSION
     st.markdown(f'<h2 style="color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); margin-bottom: 1.5rem;">📊 {t("about_analysis")}</h2>', unsafe_allow_html=True)
     
-    # Block 1: Introduction
     st.markdown('<div class="about-section">', unsafe_allow_html=True)
     st.markdown(f'<h3 style="color: white; background: linear-gradient(135deg, #1e88e5, #1565c0); padding: 1rem; border-radius: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); margin: -2rem -2rem 1.5rem -2rem;">{t("about_text")}</h3>', unsafe_allow_html=True)
     
     st.markdown(f'<ol style="color: #333; font-size: 1.05rem; line-height: 1.8; margin-top: 1rem;"><li><strong style="color: #333;">{t("descriptive_analysis")}</strong></li><li><strong style="color: #333;">{t("association_analysis")}</strong></li></ol>', unsafe_allow_html=True)
     
-    # Descriptive Analysis Section
     st.markdown(f'<h3 style="color: #333; margin-top: 2rem; border-bottom: 3px solid #1565c0; padding-bottom: 0.5rem;">{t("desc_analysis_title")}</h3>', unsafe_allow_html=True)
     st.markdown(f'<ul style="color: #333; font-size: 1.05rem; line-height: 1.8;"><li><strong style="color: #333;">{t("basic_stats_title")}</strong> {t("basic_stats_text")}</li><li><strong style="color: #333;">{t("distribution_title")}</strong> {t("distribution_text")}</li><li><strong style="color: #333;">{t("summaries_title")}</strong> {t("summaries_text")}</li></ul>', unsafe_allow_html=True)
     
-    # Association Analysis Section
     st.markdown(f'<h3 style="color: #333; margin-top: 2rem; border-bottom: 3px solid #1565c0; padding-bottom: 0.5rem;">{t("assoc_analysis_title")}</h3>', unsafe_allow_html=True)
     st.markdown(f'<ul style="color: #333; font-size: 1.05rem; line-height: 1.8;"><li><strong style="color: #333;">{t("spearman_coef")}</strong></li><li><strong style="color: #333;">{t("p_value")}</strong></li><li><strong style="color: #333;">{t("visualizations")}</strong></li><li><strong style="color: #333;">{t("interpretations")}</strong></li></ul>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Correlation Methods Section
     st.markdown(f'<div class="about-section"><h3 style="color: #1565c0; margin-top: 2rem; border-bottom: 3px solid #1565c0; padding-bottom: 0.5rem;">📈 {t("understanding_corr")}</h3></div>', unsafe_allow_html=True)
     
-    # Pearson Card
     pearson_html = f'''<div class="about-section"><div style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); padding: 1.5rem; border-radius: 10px; border-left: 5px solid #1565c0; margin: 1.5rem 0; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
     <h4 style="color: #0d47a1; margin-top: 0; font-size: 1.3rem;">📊 {t("pearson_corr")}</h4>
     <ul style="color: #333; line-height: 1.8; margin: 0;">
@@ -928,7 +890,6 @@ with tab2:
     </ul></div></div>'''
     st.markdown(pearson_html, unsafe_allow_html=True)
     
-    # Spearman Card
     spearman_html = f'''<div class="about-section"><div style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); padding: 1.5rem; border-radius: 10px; border-left: 5px solid #ff9800; margin: 1.5rem 0; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
     <h4 style="color: #e65100; margin-top: 0; font-size: 1.3rem;">📈 {t("spearman_corr")}</h4>
     <ul style="color: #333; line-height: 1.8; margin: 0;">
@@ -941,7 +902,6 @@ with tab2:
     </ul></div></div>'''
     st.markdown(spearman_html, unsafe_allow_html=True)
     
-    # Comparison Table
     comparison_table = f'''
     <div class="about-section">
         <div style="background: linear-gradient(135deg, #f1f8e9 0%, #dcedc8 100%); padding: 1.5rem; border-radius: 10px; margin: 1.5rem 0; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
@@ -997,7 +957,6 @@ with tab2:
     '''
     st.markdown(comparison_table, unsafe_allow_html=True)
     
-    # When to Use
     when_to_use = f'''
     <div class="about-section">
         <div style="background: linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%); padding: 1.5rem; border-radius: 10px; border-left: 5px solid #0288d1; margin: 1.5rem 0;">
@@ -1027,13 +986,11 @@ with tab2:
     '''
     st.markdown(when_to_use, unsafe_allow_html=True)
     
-    # Program Objectives
     st.markdown('<div class="about-section">', unsafe_allow_html=True)
     st.markdown(f'<h3 style="color: #1565c0; margin-top: 2rem; border-bottom: 3px solid #1565c0; padding-bottom: 0.5rem;">🎯 {t("program_obj")}</h3>', unsafe_allow_html=True)
     st.markdown(f'<ol style="color: #333; font-size: 1.05rem; line-height: 1.8;"><li>{t("obj_1")}</li><li>{t("obj_2")}</li><li>{t("obj_3")}</li><li>{t("obj_4")}</li><li>{t("obj_5")}</li></ol>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# ==================== TAB 3: ANALYSIS ====================
 with tab3:
     st.markdown("""
     <style>
@@ -1367,7 +1324,6 @@ with tab3:
             </div>
             """, unsafe_allow_html=True)
             
-    # ==================== PDF GENERATION - BILINGUAL VERSION ====================
             st.markdown("<br><br>", unsafe_allow_html=True)
             st.markdown("<div class='content-box'>", unsafe_allow_html=True)
             st.markdown(f"## 📄 {t('pdf_download_btn').split('(')[0]}")
@@ -1385,17 +1341,14 @@ with tab3:
                 story = []
                 styles = getSampleStyleSheet()
                 
-                # Custom styles
                 title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=26, textColor=colors.HexColor('#0d47a1'), spaceAfter=20, alignment=TA_CENTER, fontName='Helvetica-Bold')
                 heading_style = ParagraphStyle('CustomHeading', parent=styles['Heading2'], fontSize=18, textColor=colors.HexColor('#1565c0'), spaceAfter=15, spaceBefore=20, fontName='Helvetica-Bold')
                 subheading_style = ParagraphStyle('CustomSubHeading', parent=styles['Heading3'], fontSize=14, textColor=colors.HexColor('#1976d2'), spaceAfter=10, spaceBefore=15, fontName='Helvetica-Bold')
                 body_style = ParagraphStyle('CustomBody', parent=styles['Normal'], fontSize=11, alignment=TA_JUSTIFY, spaceAfter=10, leading=14)
                 
-                # =============== PAGE 1: COVER & EXECUTIVE SUMMARY ===============
                 story.append(Paragraph(f"📊 {t('pdf_title')}", title_style))
                 story.append(Spacer(1, 0.5*inch))
                 
-                # Report Info Table
                 info_data = [
                     [t('pdf_report_info'), ''],
                     [t('pdf_generated'), datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
@@ -1423,7 +1376,6 @@ with tab3:
                 story.append(info_table)
                 story.append(Spacer(1, 0.4*inch))
                 
-                # Executive Summary
                 story.append(Paragraph(t('pdf_exec_summary'), heading_style))
                 sig_text = t('pdf_statistically_sig') if p < 0.05 else t('pdf_not_statistically_sig')
                 
@@ -1434,7 +1386,6 @@ with tab3:
                 story.append(Paragraph(summary_text, body_style))
                 story.append(PageBreak())
                 
-                # =============== PAGE 2: DESCRIPTIVE STATISTICS ===============
                 story.append(Paragraph(f"1. {t('pdf_desc_stats')}", heading_style))
                 story.append(Paragraph(t('descriptive_desc'), body_style))
                 story.append(Spacer(1, 0.2*inch))
@@ -1449,7 +1400,6 @@ with tab3:
                     if pd.api.types.is_numeric_dtype(series):
                         desc = descriptive_numeric(series)
                         
-                        # Statistics table
                         stats_data = [
                             [t('pdf_statistic'), t('pdf_value'), t('pdf_interpretation_col')],
                             [t('count'), str(desc[t('count')]), t('size')],
@@ -1478,7 +1428,7 @@ with tab3:
                         story.append(stats_table)
                         story.append(Spacer(1, 0.2*inch))
                         
-                        # Histogram
+                      
                         try:
                             fig_hist, ax_hist = plt.subplots(figsize=(7, 3.5))
                             clean_data = series.dropna()
@@ -1509,7 +1459,7 @@ with tab3:
                         except Exception as e:
                             story.append(Paragraph(f"<i>Chart generation error: {str(e)}</i>", body_style))
                         
-                        # Frequency Distribution
+                        
                         if is_likert(series):
                             story.append(Paragraph(f"{t('frequency_dist')} - {col}:", subheading_style))
                             freq = freq_table(series)
@@ -1540,7 +1490,6 @@ with tab3:
                 
                 story.append(PageBreak())
                 
-                # =============== PAGE 3: NORMALITY TESTING ===============
                 story.append(Paragraph(f"2. {t('pdf_normality_test')}", heading_style))
                 story.append(Paragraph(t('pdf_normality_text'), body_style))
                 story.append(Spacer(1, 0.2*inch))
@@ -1572,7 +1521,7 @@ with tab3:
                 story.append(norm_table)
                 story.append(Spacer(1, 0.3*inch))
                 
-                # Method selection
+                
                 method_box = f"""<b>{t('pdf_selected_method')} {method}</b><br/><br/>
                 {t('pdf_method_text_1')} <b>{method}</b> {t('pdf_method_text_2')} 
                 {t('pdf_pearson_suitable') if method == t('pearson') else t('pdf_spearman_suitable')}
@@ -1580,12 +1529,12 @@ with tab3:
                 story.append(Paragraph(method_box, body_style))
                 story.append(PageBreak())
                 
-                # =============== PAGE 4: CORRELATION ANALYSIS ===============
+                
                 story.append(Paragraph(f"3. {t('pdf_corr_analysis')}", heading_style))
                 story.append(Paragraph(f"{t('association')} X_total {t('and')} Y_total {t('method').lower()} {method}.", body_style))
                 story.append(Spacer(1, 0.2*inch))
                 
-                # Correlation Results Table
+                
                 corr_data = [
                     [t('pdf_metric'), t('pdf_value'), t('pdf_interp')],
                     [t('method'), method, t('pdf_method_used')],
@@ -1613,7 +1562,7 @@ with tab3:
                 story.append(corr_table)
                 story.append(Spacer(1, 0.3*inch))
                 
-                # Scatter Plot
+                
                 story.append(Paragraph(t('pdf_scatter_plot'), subheading_style))
                 story.append(Spacer(1, 0.1*inch))
                 
@@ -1656,12 +1605,11 @@ with tab3:
                 
                 story.append(PageBreak())
                 
-                # =============== PAGE 5: INTERPRETATION ===============
                 story.append(Paragraph(f"4. {t('pdf_interpretation').upper()}", heading_style))
                 story.append(Paragraph(t('pdf_key_findings'), body_style))
                 story.append(Spacer(1, 0.2*inch))
                 
-                # Strength
+              
                 story.append(Paragraph(t('pdf_strength_rel'), subheading_style))
                 substantial_text = t('pdf_substantial') if abs(r) > 0.5 else t('pdf_moderate')
                 strength_interp = f"""{t('pdf_strength_text_1')} <b>{r:.4f}</b> {t('pdf_strength_text_2')} <b>{strength.lower()}</b> {t('pdf_strength_text_3')} 
@@ -1669,7 +1617,7 @@ with tab3:
                 story.append(Paragraph(strength_interp, body_style))
                 story.append(Spacer(1, 0.15*inch))
                 
-                # Direction
+                
                 story.append(Paragraph(t('pdf_direction_rel'), subheading_style))
                 direction_text = t('pdf_increase') if r > 0 else t('pdf_decrease')
                 movement = t('pdf_same_direction') if r > 0 else t('pdf_opposite_direction')
@@ -1679,7 +1627,7 @@ with tab3:
                 story.append(Paragraph(dir_interp, body_style))
                 story.append(Spacer(1, 0.15*inch))
                 
-                # Significance
+               
                 story.append(Paragraph(t('pdf_stat_sig'), subheading_style))
                 sig_result = t('pdf_reject_null') if p < 0.05 else t('pdf_cannot_reject')
                 sig_interp = f"""{t('pdf_sig_text_1')} <b>{p:.4f}</b>, {t('pdf_sig_text_2')} <b>{t('significant') if p < 0.05 else t('not_significant')}</b>. 
@@ -1687,13 +1635,13 @@ with tab3:
                 story.append(Paragraph(sig_interp, body_style))
                 story.append(Spacer(1, 0.15*inch))
                 
-                # Important Note
+               
                 story.append(Paragraph(t('pdf_important_note'), subheading_style))
                 note_text = f"""<b>{t('pdf_causation')}</b> {t('pdf_sig_association') if p < 0.05 else t('pdf_an_association')} {t('pdf_causation_text')}"""
                 story.append(Paragraph(note_text, body_style))
                 story.append(PageBreak())
                 
-                # =============== PAGE 6: CONCLUSION ===============
+                
                 story.append(Paragraph(f"5. {t('pdf_conclusion').upper()}", heading_style))
                 story.append(Spacer(1, 0.2*inch))
                 
@@ -1714,7 +1662,7 @@ with tab3:
                 story.append(Paragraph(findings_list, body_style))
                 story.append(Spacer(1, 0.3*inch))
                 
-                # Recommendations
+              
                 story.append(Paragraph(t('pdf_recommendations'), subheading_style))
                 recommendations = f"""
                 <b>1.</b> {t('pdf_rec_1')}<br/><br/>
@@ -1724,12 +1672,12 @@ with tab3:
                 """
                 story.append(Paragraph(recommendations, body_style))
                 
-                # Footer
+                
                 story.append(Spacer(1, 0.6*inch))
                 footer_text = f"""<i>{t('pdf_footer')} {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</i>"""
                 story.append(Paragraph(footer_text, ParagraphStyle('Footer', parent=body_style, fontSize=9, alignment=TA_CENTER, textColor=colors.grey, leading=12)))
                 
-                # Build PDF
+               
                 doc.build(story)
                 pdf_buffer.seek(0)
                 
@@ -1753,4 +1701,5 @@ with tab3:
                 st.code(traceback.format_exc())
             
             st.markdown("</div>", unsafe_allow_html=True)
+
 
